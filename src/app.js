@@ -1,15 +1,15 @@
-const express = require('express');
-const config = require('./config');
-const middlewares = require('./middlewares');
+const express = require("express");
+const config = require("./config");
+const middlewares = require("./middlewares");
 
 const app = express();
 
-app.use(express.json);
+app.use(express.json());
+app.use(middlewares.corsOptions);
+app.use("/api", require("./routes/index"));
 
-app.use('/api', require('./routes/index'));
-
-app.get('/', (req, res) => {
-  res.send({ message: 'Welcome to DesHeures API Application' });
+app.get("/", (req, res) => {
+  res.send({ message: "Welcome to DesHeures API Application" });
 });
 
 app.listen(config.port, () => {

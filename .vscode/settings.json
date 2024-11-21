@@ -9,6 +9,4 @@
   "prettier.bracketSpacing": true,
   "prettier.bracketSameLine": false,
   "prettier.arrowParens": "always",
-
-
 }
