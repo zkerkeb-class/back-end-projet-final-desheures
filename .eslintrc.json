@@ -1,0 +1,47 @@
+{
+  "env": {
+    "node": true,
+    "es2021": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module"
+  },
+  "extends": ["eslint:recommended"],
+
+  "rules": {
+    "no-console": "warn", 
+    "quotes": ["error", "single"],
+    "eqeqeq": ["error", "always"], 
+    "curly": ["error", "all"], 
+    "no-unused-vars": [
+   
+      "error",
+      { "argsIgnorePattern": "^_" } 
+    ],
+    "strict": ["error", "global"], // Active strict mode globalement
+    "prefer-const": "error", // Force l'utilisation de `const` pour les variables non modifiées
+    "no-var": "error", // Interdit `var` au profit de `let`/`const`
+    "arrow-spacing": [
+      "error",
+      {
+        // Exige un espace avant et après les flèches
+        "before": true,
+        "after": true
+      }
+    ],
+    "object-curly-spacing": ["error", "always"], // Exige un espace dans les objets {}
+    "comma-dangle": ["error", "never"], // Interdit les virgules finales dans les objets/arrays
+    "indent": ["error", 2], // Indentation avec 2 espaces
+    "no-trailing-spaces": "error", // Interdit les espaces inutiles en fin de ligne
+    "space-before-blocks": ["error", "always"], // Exige un espace avant les blocs de code
+    "keyword-spacing": [
+      "error",
+      {
+        // Exige un espace autour des mots-clés
+        "before": true,
+        "after": true
+      }
+    ]
+  }
+}
