@@ -1,7 +1,7 @@
 const express = require('express');
-const config = require('./config');
+const config = require('./config/env');
 const middlewares = require('./middlewares');
-const mongoose = require('mongoose');
+const connectToDatabase = require('./config/db');
 const app = express();
 
 app.use(express.json());
@@ -13,13 +13,8 @@ app.get('/', (req, res) => {
   res.send({ message: 'Welcome to DesHeures API Application' });
 });
 
+connectToDatabase();
+
 app.listen(config.port, () => {
   console.log(`Server is running on http://localhost:${config.port}`);
 });
-
-mongoose
-  .connect(
-    `mongodb+srv://${config.mongo_user}:${config.mongo_pwd}@${config.mongo_cluster}.mongodb.net/`
-  )
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error(err));

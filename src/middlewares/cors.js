@@ -1,5 +1,5 @@
 const cors = require('cors');
-const config = require('../config');
+const config = require('../config/env');
 
 const allowedOrigins = [config.frontend_url, config.backoffice_url];
 
