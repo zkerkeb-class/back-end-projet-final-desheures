@@ -1,12 +1,11 @@
 {
-  "editor.formatOnSave": true,
-  "prettier.printWidth": 80,
-  "prettier.semi": true,
-  "prettier.tabWidth": 2,
-  "prettier.useTabs": false,
-  "prettier.singleQuote": true,
-  "prettier.trailingComma": "es5",
-  "prettier.bracketSpacing": true,
-  "prettier.bracketSameLine": false,
-  "prettier.arrowParens": "always"
+  "printWidth": 80,
+  "semi": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "arrowParens": "always"
 }

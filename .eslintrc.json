@@ -1,0 +1,40 @@
+{
+    "env": {
+      "node": true,            // Active les globals spécifiques à Node.js
+      "es2021": true           // Active les fonctionnalités ECMAScript modernes
+    },
+    "parserOptions": {
+      "ecmaVersion": 2021,     // Permet les fonctionnalités ECMAScript 2021
+      "sourceType": "module"   // Supporte les modules ES6 (import/export)
+    },
+    "extends": ["eslint:recommended"], // Base des bonnes pratiques ESLint
+    "rules": {
+      "no-console": "warn",                // Avertit pour les console.log
+      "no-extra-semi": "error",            // Interdit les points-virgules inutiles
+      "semi": ["error", "never"],          // Force l'absence de point-virgule
+      "quotes": ["error", "single"],       // Force l'utilisation de guillemets simples
+      "eqeqeq": ["error", "always"],       // Oblige à utiliser === et !==
+      "curly": ["error", "all"],           // Exige des accolades pour tous les blocs
+      "no-unused-vars": [                  // Gère les variables inutilisées
+        "error",
+        { "argsIgnorePattern": "^_" }      // Ignore les arguments inutilisés commençant par `_`
+      ],
+      "strict": ["error", "global"],       // Active strict mode globalement
+      "prefer-const": "error",             // Force l'utilisation de `const` pour les variables non modifiées
+      "no-var": "error",                   // Interdit `var` au profit de `let`/`const`
+      "arrow-spacing": ["error", {         // Exige un espace avant et après les flèches
+        "before": true,
+        "after": true
+      }],
+      "object-curly-spacing": ["error", "always"], // Exige un espace dans les objets {}
+      "comma-dangle": ["error", "never"],          // Interdit les virgules finales dans les objets/arrays
+      "indent": ["error", 2],                      // Indentation avec 2 espaces
+      "no-trailing-spaces": "error",               // Interdit les espaces inutiles en fin de ligne
+      "space-before-blocks": ["error", "always"],  // Exige un espace avant les blocs de code
+      "keyword-spacing": ["error", {              // Exige un espace autour des mots-clés
+        "before": true,
+        "after": true
+      }]
+    }
+  }
+  
