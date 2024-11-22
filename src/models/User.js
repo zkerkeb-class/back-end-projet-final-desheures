@@ -1,5 +1,43 @@
 const mongoose = require('mongoose');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - username
+ *         - email
+ *         - role
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Identifiant unique généré automatiquement pour l'utilisateur.
+ *         username:
+ *           type: string
+ *           description: Nom d'utilisateur de l'utilisateur.
+ *           example: johndoe
+ *         email:
+ *           type: string
+ *           description: Adresse email de l'utilisateur.
+ *           format: email
+ *           example: johndoe@example.com
+ *         password:
+ *           type: string
+ *           description: Mot de passe crypté de l'utilisateur.
+ *           example: $2b$10$abcdef123456
+ *         role:
+ *           type: string
+ *           description: Rôle de l'utilisateur dans le système (ex. admin, user, etc.).
+ *           example: admin
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Date et heure de création de l'utilisateur.
+ *           example: 2024-11-21T10:30:00Z
+ */
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
