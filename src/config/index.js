@@ -1,9 +1,9 @@
 const connectToDatabase = require('./db');
 const env = require('./env');
-const swagger = require('./swagger');
+const swaggerSpec = require('./swagger');
 
 module.exports = {
   connectToDatabase,
   env,
-  swagger
+  swaggerSpec
 };

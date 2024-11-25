@@ -1,5 +1,5 @@
 const swaggerJsdoc = require('swagger-jsdoc');
-const config = require('./env');
+const env = require('./env');
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
@@ -9,7 +9,7 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: `http://localhost:${config.port}`,
+      url: `http://localhost:${env.port}`,
       description: 'Serveur local'
     }
   ]

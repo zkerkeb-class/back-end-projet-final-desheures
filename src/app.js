@@ -11,12 +11,12 @@ app.use(middlewares.corsOptions);
 app.get('/', (req, res) => {
   res.send({ message: 'Welcome to DesHeures API Application' });
 });
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(config.swagger));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
 app.use('/api', require('./routes/index'));
 
 config.connectToDatabase();
 
-app.listen(config.port, () => {
+app.listen(config.env.port, () => {
   console.log(`Server is running on http://localhost:${config.env.port}`);
   console.log(
     `Swagger Docs available at http://localhost:${config.env.port}/api-docs`

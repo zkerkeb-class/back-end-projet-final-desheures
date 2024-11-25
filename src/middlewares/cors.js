@@ -1,7 +1,7 @@
 const cors = require('cors');
-const config = require('../config/env');
+const env = require('../config/env');
 
-const allowedOrigins = [config.frontend_url, config.backoffice_url];
+const allowedOrigins = [env.frontend_url, env.backoffice_url];
 
 const corsOptions = {
   origin: (origin, callback) => {
