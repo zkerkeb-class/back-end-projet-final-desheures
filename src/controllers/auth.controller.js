@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const config = require('../config/env');
+const config = require('../config');
 
 module.exports = {
   login: async (req, res) => {
@@ -44,7 +44,7 @@ module.exports = {
           email: adminUser.email,
           role: adminUser.role
         },
-        config.jwt_secret,
+        config.env.jwt_secret,
         { expiresIn: '1h' }
       );
 

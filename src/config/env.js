@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const config = {
+const env = {
   port: process.env.PORT,
   frontend_url: process.env.FRONTEND_URL,
   backoffice_url: process.env.BACKOFFICE_URL,
@@ -12,4 +12,4 @@ const config = {
   mongo_uri: process.env.MONGO_URI
 };
 
-module.exports = config;
+module.exports = env;

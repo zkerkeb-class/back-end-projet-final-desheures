@@ -7,9 +7,7 @@ module.exports = {
       const savedArtist = await artist.save();
       res.status(201).json(savedArtist);
     } catch (error) {
-      res
-        .status(400)
-        .json({ message: "Erreur lors de la création de l'artiste", error });
+      res.status(400).json({ message: 'Erreur lors de la création', error });
     }
   },
   getAllArtists: async (req, res) => {
@@ -32,7 +30,7 @@ module.exports = {
       res.status(200).json(artist);
     } catch (error) {
       res.status(500).json({
-        message: "Erreur lors de la récupération de l'artiste",
+        message: 'Erreur lors de la récupération',
         error
       });
     }
@@ -49,9 +47,7 @@ module.exports = {
       }
       res.status(200).json(updatedArtist);
     } catch (error) {
-      res
-        .status(400)
-        .json({ message: "Erreur lors de la mise à jour de l'artiste", error });
+      res.status(400).json({ message: 'Erreur lors de la mise à jour', error });
     }
   },
   deleteArtist: async (req, res) => {
@@ -65,9 +61,7 @@ module.exports = {
         artist: deletedArtist
       });
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Erreur lors de la suppression de l'artiste", error });
+      res.status(500).json({ message: 'Erreur lors de la suppression', error });
     }
   }
 };

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const config = require('../config/env');
+const config = require('../config');
 
 const isAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -15,7 +15,7 @@ const isAuth = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, config.jwt_secret);
+    const decoded = jwt.verify(token, config.env.jwt_secret);
 
     if (decoded.role !== 'admin') {
       return res
