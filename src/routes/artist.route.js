@@ -176,10 +176,10 @@ const middlewares = require('../middlewares/');
  *         bio: Un artiste de rock célèbre
  */
 
+router.get('/', artistController.getAllArtists);
+router.get('/:id', artistController.getArtistById);
 router.post('/', middlewares.isAuth, artistController.createArtist);
 router.put('/:id', middlewares.isAuth, artistController.updateArtist);
 router.delete('/:id', middlewares.isAuth, artistController.deleteArtist);
-router.get('/', artistController.getAllArtists);
-router.get('/:id', artistController.getArtistById);
 
 module.exports = router;
