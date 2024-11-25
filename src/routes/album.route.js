@@ -10,6 +10,140 @@ const middlewares = require('../middlewares/');
  *   description: Gestion des albums
  */
 
+/**
+ * @swagger
+ * /api/album:
+ *   get:
+ *     summary: Récupérer tous les albums
+ *     tags: [Album]
+ *     responses:
+ *       200:
+ *         description: Liste des albums récupérée avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Album'
+ *       500:
+ *         description: Erreur serveur.
+ */
+
+/**
+ * @swagger
+ * /api/album/{id}:
+ *   get:
+ *     summary: Récupérer un album par son ID
+ *     tags: [Album]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de l'album
+ *     responses:
+ *       200:
+ *         description: Album récupéré avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Album'
+ *       404:
+ *         description: Album non trouvé.
+ *       500:
+ *         description: Erreur serveur.
+ */
+
+/**
+ * @swagger
+ * /api/album:
+ *   post:
+ *     summary: Créer un nouvel album
+ *     tags: [Album]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Album'
+ *     responses:
+ *       201:
+ *         description: Album créé avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Album'
+ *       400:
+ *         description: Erreur de validation des données.
+ *       401:
+ *         description: Non autorisé.
+ */
+
+/**
+ * @swagger
+ * /api/album/{id}:
+ *   put:
+ *     summary: Mettre à jour un album par son ID
+ *     tags: [Album]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de l'album
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Album'
+ *     responses:
+ *       200:
+ *         description: Album mis à jour avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Album'
+ *       404:
+ *         description: Album non trouvé.
+ *       400:
+ *         description: Erreur de validation des données.
+ *       401:
+ *         description: Non autorisé.
+ */
+
+/**
+ * @swagger
+ * /api/album/{id}:
+ *   delete:
+ *     summary: Supprimer un album par son ID
+ *     tags: [Album]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de l'album
+ *     responses:
+ *       200:
+ *         description: Album supprimé avec succès.
+ *       404:
+ *         description: Album non trouvé.
+ *       401:
+ *         description: Non autorisé.
+ *       500:
+ *         description: Erreur serveur.
+ */
+
 router.get('/', albumController.getAllAlbums);
 router.get('/:id', albumController.getAlbumById);
 router.post('/', middlewares.isAuth, albumController.createAlbum);
