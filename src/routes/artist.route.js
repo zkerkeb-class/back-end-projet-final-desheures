@@ -13,31 +13,6 @@ const middlewares = require('../middlewares/');
 /**
  * @swagger
  * /api/artist:
- *   post:
- *     summary: Créer un nouvel artiste
- *     tags: [Artists]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Artist'
- *     responses:
- *       201:
- *         description: Artiste créé avec succès
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Artist'
- *       400:
- *         description: Erreur lors de la création
- */
-
-/**
- * @swagger
- * /api/artist:
  *   get:
  *     summary: Récupérer la liste de tous les artistes
  *     tags: [Artists]
@@ -78,6 +53,31 @@ const middlewares = require('../middlewares/');
  *         description: Artiste non trouvé
  *       500:
  *         description: Erreur lors de la récupération
+ */
+
+/**
+ * @swagger
+ * /api/artist:
+ *   post:
+ *     summary: Créer un nouvel artiste
+ *     tags: [Artists]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Artist'
+ *     responses:
+ *       201:
+ *         description: Artiste créé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Artist'
+ *       400:
+ *         description: Erreur lors de la création
  */
 
 /**
@@ -176,10 +176,10 @@ const middlewares = require('../middlewares/');
  *         bio: Un artiste de rock célèbre
  */
 
+router.get('/', artistController.getAllArtists);
+router.get('/:id', artistController.getArtistById);
 router.post('/', middlewares.isAuth, artistController.createArtist);
 router.put('/:id', middlewares.isAuth, artistController.updateArtist);
 router.delete('/:id', middlewares.isAuth, artistController.deleteArtist);
-router.get('/', artistController.getAllArtists);
-router.get('/:id', artistController.getArtistById);
 
 module.exports = router;
