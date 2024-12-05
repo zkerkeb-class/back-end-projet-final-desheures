@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ const AlbumSchema = new mongoose.Schema({
   },
   artist: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Artist',
+    ref: "Artist",
     required: true
   },
   releaseDate: {
@@ -82,7 +82,7 @@ const AlbumSchema = new mongoose.Schema({
   tracks: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Audio'
+      ref: "Audio"
     }
   ],
   trackCount: {
@@ -99,6 +99,6 @@ const AlbumSchema = new mongoose.Schema({
   }
 });
 
-const Album = mongoose.model('Album', AlbumSchema);
+const Album = mongoose.model("Album", AlbumSchema);
 
 module.exports = Album;

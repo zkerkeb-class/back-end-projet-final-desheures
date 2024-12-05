@@ -1,11 +1,11 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-const env = require('./env');
+const swaggerJsdoc = require("swagger-jsdoc");
+const env = require("./env");
 const swaggerDefinition = {
-  openapi: '3.0.0',
+  openapi: "3.0.0",
   info: {
-    title: 'DesHeures API',
-    version: '1.0.0',
-    description: 'API pour l’application DesHeures'
+    title: "DesHeures API",
+    version: "1.0.0",
+    description: "API pour l’application DesHeures"
   },
   servers: [
     {
@@ -16,7 +16,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: ['src/routes/*.js', 'src/models/*.js']
+  apis: ["src/routes/*.js", "src/models/*.js"]
 };
 
 const swaggerSpec = swaggerJsdoc(options);

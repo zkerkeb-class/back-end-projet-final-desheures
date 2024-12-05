@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * @swagger
@@ -73,12 +73,12 @@ const AudioSchema = new mongoose.Schema({
   },
   artist: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Artist',
+    ref: "Artist",
     required: true
   },
   album: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Album'
+    ref: "Album"
   },
   duration: {
     type: Number,
@@ -111,6 +111,6 @@ const AudioSchema = new mongoose.Schema({
   }
 });
 
-const Audio = mongoose.model('Audio', AudioSchema);
+const Audio = mongoose.model("Audio", AudioSchema);
 
 module.exports = Audio;

@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const audioController = require('../controllers/audio.controller');
-const middlewares = require('../middlewares/');
+const audioController = require("../controllers/audio.controller");
+const middlewares = require("../middlewares/");
 
 /**
  * @swagger
@@ -151,10 +151,10 @@ const middlewares = require('../middlewares/');
  *         description: Erreur serveur.
  */
 
-router.get('/', audioController.getAllAudios);
-router.get('/:id', audioController.getAudioById);
-router.post('/', middlewares.isAuth, audioController.createAudio);
-router.put('/:id', middlewares.isAuth, audioController.updateAudio);
-router.delete('/:id', middlewares.isAuth, audioController.deleteAudio);
+router.get("/", audioController.getAllAudios);
+router.get("/:id", audioController.getAudioById);
+router.post("/", middlewares.isAuth, audioController.createAudio);
+router.put("/:id", middlewares.isAuth, audioController.updateAudio);
+router.delete("/:id", middlewares.isAuth, audioController.deleteAudio);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const Playlist = require('../models/Playlist');
+const Playlist = require("../models/Playlist");
 
 module.exports = {
   createPlaylist: async (req, res) => {
@@ -9,20 +9,20 @@ module.exports = {
     } catch (error) {
       res
         .status(400)
-        .json({ message: 'Erreur lors de la création de la playlist', error });
+        .json({ message: "Erreur lors de la création de la playlist", error });
     }
   },
 
   getAllPlaylists: async (req, res) => {
     try {
       const playlists = await Playlist.find().populate(
-        'tracks',
-        'title duration'
+        "tracks",
+        "title duration"
       );
       res.status(200).json(playlists);
     } catch (error) {
       res.status(500).json({
-        message: 'Erreur lors de la récupération des playlists',
+        message: "Erreur lors de la récupération des playlists",
         error
       });
     }
@@ -31,16 +31,16 @@ module.exports = {
   getPlaylistById: async (req, res) => {
     try {
       const playlist = await Playlist.findById(req.params.id).populate(
-        'tracks',
-        'title duration'
+        "tracks",
+        "title duration"
       );
       if (!playlist) {
-        return res.status(404).json({ message: 'Playlist non trouvée' });
+        return res.status(404).json({ message: "Playlist non trouvée" });
       }
       res.status(200).json(playlist);
     } catch (error) {
       res.status(500).json({
-        message: 'Erreur lors de la récupération de la playlist',
+        message: "Erreur lors de la récupération de la playlist",
         error
       });
     }
@@ -52,14 +52,14 @@ module.exports = {
         req.params.id,
         req.body,
         { new: true }
-      ).populate('tracks', 'title duration');
+      ).populate("tracks", "title duration");
       if (!updatedPlaylist) {
-        return res.status(404).json({ message: 'Playlist non trouvée' });
+        return res.status(404).json({ message: "Playlist non trouvée" });
       }
       res.status(200).json(updatedPlaylist);
     } catch (error) {
       res.status(400).json({
-        message: 'Erreur lors de la mise à jour de la playlist',
+        message: "Erreur lors de la mise à jour de la playlist",
         error
       });
     }
@@ -69,15 +69,15 @@ module.exports = {
     try {
       const deletedPlaylist = await Playlist.findByIdAndDelete(req.params.id);
       if (!deletedPlaylist) {
-        return res.status(404).json({ message: 'Playlist non trouvée' });
+        return res.status(404).json({ message: "Playlist non trouvée" });
       }
       res.status(200).json({
-        message: 'Playlist supprimée avec succès',
+        message: "Playlist supprimée avec succès",
         playlist: deletedPlaylist
       });
     } catch (error) {
       res.status(500).json({
-        message: 'Erreur lors de la suppression de la playlist',
+        message: "Erreur lors de la suppression de la playlist",
         error
       });
     }
@@ -87,12 +87,12 @@ module.exports = {
     try {
       const playlist = await Playlist.findById(req.params.id);
       if (!playlist) {
-        return res.status(404).json({ message: 'Playlist non trouvée' });
+        return res.status(404).json({ message: "Playlist non trouvée" });
       }
 
       const trackId = req.body.trackId;
       if (!trackId) {
-        return res.status(400).json({ message: 'ID de la piste manquant' });
+        return res.status(400).json({ message: "ID de la piste manquant" });
       }
 
       if (!playlist.tracks.includes(trackId)) {
@@ -114,12 +114,12 @@ module.exports = {
     try {
       const playlist = await Playlist.findById(req.params.id);
       if (!playlist) {
-        return res.status(404).json({ message: 'Playlist non trouvée' });
+        return res.status(404).json({ message: "Playlist non trouvée" });
       }
 
       const trackId = req.body.trackId;
       if (!trackId) {
-        return res.status(400).json({ message: 'ID de la piste manquant' });
+        return res.status(400).json({ message: "ID de la piste manquant" });
       }
 
       playlist.tracks = playlist.tracks.filter(
@@ -131,7 +131,7 @@ module.exports = {
       res.status(200).json(playlist);
     } catch (error) {
       res.status(500).json({
-        message: 'Erreur lors de la suppression de la piste de la playlist',
+        message: "Erreur lors de la suppression de la piste de la playlist",
         error
       });
     }

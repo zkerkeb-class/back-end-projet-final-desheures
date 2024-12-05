@@ -1,4 +1,4 @@
-const Audio = require('../models/Audio');
+const Audio = require("../models/Audio");
 
 module.exports = {
   createAudio: async (req, res) => {
@@ -16,12 +16,12 @@ module.exports = {
   getAllAudios: async (req, res) => {
     try {
       const audios = await Audio.find()
-        .populate('artist', 'name')
-        .populate('album', 'title');
+        .populate("artist", "name")
+        .populate("album", "title");
       res.status(200).json(audios);
     } catch (error) {
       res.status(500).json({
-        message: 'Erreur lors de la récupération des audios',
+        message: "Erreur lors de la récupération des audios",
         error
       });
     }
@@ -30,10 +30,10 @@ module.exports = {
   getAudioById: async (req, res) => {
     try {
       const audio = await Audio.findById(req.params.id)
-        .populate('artist', 'name')
-        .populate('album', 'title');
+        .populate("artist", "name")
+        .populate("album", "title");
       if (!audio) {
-        return res.status(404).json({ message: 'Audio non trouvé' });
+        return res.status(404).json({ message: "Audio non trouvé" });
       }
       res.status(200).json(audio);
     } catch (error) {
@@ -51,10 +51,10 @@ module.exports = {
         req.body,
         { new: true }
       )
-        .populate('artist', 'name')
-        .populate('album', 'title');
+        .populate("artist", "name")
+        .populate("album", "title");
       if (!updatedAudio) {
-        return res.status(404).json({ message: 'Audio non trouvé' });
+        return res.status(404).json({ message: "Audio non trouvé" });
       }
       res.status(200).json(updatedAudio);
     } catch (error) {
@@ -68,10 +68,10 @@ module.exports = {
     try {
       const deletedAudio = await Audio.findByIdAndDelete(req.params.id);
       if (!deletedAudio) {
-        return res.status(404).json({ message: 'Audio non trouvé' });
+        return res.status(404).json({ message: "Audio non trouvé" });
       }
       res.status(200).json({
-        message: 'Audio supprimé avec succès',
+        message: "Audio supprimé avec succès",
         audio: deletedAudio
       });
     } catch (error) {

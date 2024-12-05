@@ -1,12 +1,12 @@
-const mongoose = require('mongoose');
-const env = require('./env'); // Importer les variables d'environnement
-
+const mongoose = require("mongoose");
+const env = require("./env");
+const logger = require("./logger");
 const connectToDatabase = async () => {
   try {
     await mongoose.connect(env.mongo_uri);
-    console.log('MongoDB connected');
+    logger.info("MongoDB connected");
   } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
+    logger.error("Error connecting to MongoDB : ", err);
     process.exit(1);
   }
 };

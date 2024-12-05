@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * @swagger
@@ -59,12 +59,12 @@ const PlaylistSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    default: ''
+    default: ""
   },
   tracks: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Audio',
+      ref: "Audio",
       required: true
     }
   ],
@@ -89,6 +89,6 @@ const PlaylistSchema = new mongoose.Schema({
   }
 });
 
-const Playlist = mongoose.model('Playlist', PlaylistSchema);
+const Playlist = mongoose.model("Playlist", PlaylistSchema);
 
 module.exports = Playlist;

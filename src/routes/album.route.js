@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const albumController = require('../controllers/album.controller');
-const middlewares = require('../middlewares/');
+const albumController = require("../controllers/album.controller");
+const middlewares = require("../middlewares/");
 
 /**
  * @swagger
@@ -144,10 +144,10 @@ const middlewares = require('../middlewares/');
  *         description: Erreur serveur.
  */
 
-router.get('/', albumController.getAllAlbums);
-router.get('/:id', albumController.getAlbumById);
-router.post('/', middlewares.isAuth, albumController.createAlbum);
-router.put('/:id', middlewares.isAuth, albumController.updateAlbum);
-router.delete('/:id', middlewares.isAuth, albumController.deleteAlbum);
+router.get("/", albumController.getAllAlbums);
+router.get("/:id", albumController.getAlbumById);
+router.post("/", middlewares.isAuth, albumController.createAlbum);
+router.put("/:id", middlewares.isAuth, albumController.updateAlbum);
+router.delete("/:id", middlewares.isAuth, albumController.deleteAlbum);
 
 module.exports = router;

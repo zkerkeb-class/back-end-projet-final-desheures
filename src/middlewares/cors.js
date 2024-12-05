@@ -1,5 +1,5 @@
-const cors = require('cors');
-const env = require('../config/env');
+const cors = require("cors");
+const env = require("../config/env");
 
 const allowedOrigins = [env.frontend_url, env.backoffice_url];
 
@@ -8,11 +8,11 @@ const corsOptions = {
     if (allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 };
 

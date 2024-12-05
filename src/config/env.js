@@ -1,4 +1,29 @@
-require('dotenv').config();
+require("dotenv").config();
+const logger = require("./logger");
+
+const requiredEnvVariables = [
+  "PORT",
+  "FRONTEND_URL",
+  "BACKOFFICE_URL",
+  "MONGO_USER",
+  "MONGO_PWD",
+  "MONGO_CLUSTER",
+  "JWT_SECRET",
+  "ADMIN_PASSWORD",
+  "MONGO_URI"
+];
+
+// Vérification des variables d'environnement manquantes
+const missingEnvVariables = requiredEnvVariables.filter(
+  (key) => !process.env[key]
+);
+
+if (missingEnvVariables.length > 0) {
+  logger.error(
+    `Environnement variables missing : ${missingEnvVariables.join(", ")}`
+  );
+  throw new Error("API stopped because of missing variables");
+}
 
 const env = {
   port: process.env.PORT,
