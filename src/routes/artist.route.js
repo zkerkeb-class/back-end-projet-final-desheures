@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const artistController = require('../controllers/artist.controller');
-const middlewares = require('../middlewares/');
+const artistController = require("../controllers/artist.controller");
+const middlewares = require("../middlewares/");
 
 /**
  * @swagger
@@ -176,10 +176,10 @@ const middlewares = require('../middlewares/');
  *         bio: Un artiste de rock célèbre
  */
 
-router.get('/', artistController.getAllArtists);
-router.get('/:id', artistController.getArtistById);
-router.post('/', middlewares.isAuth, artistController.createArtist);
-router.put('/:id', middlewares.isAuth, artistController.updateArtist);
-router.delete('/:id', middlewares.isAuth, artistController.deleteArtist);
+router.get("/", artistController.getAllArtists);
+router.get("/:id", artistController.getArtistById);
+router.post("/", middlewares.isAuth, artistController.createArtist);
+router.put("/:id", middlewares.isAuth, artistController.updateArtist);
+router.delete("/:id", middlewares.isAuth, artistController.deleteArtist);
 
 module.exports = router;

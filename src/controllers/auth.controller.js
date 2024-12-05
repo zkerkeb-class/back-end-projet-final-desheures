@@ -1,16 +1,16 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const config = require('../config');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const config = require("../config");
 
 module.exports = {
   login: async (req, res) => {
     const { email, password } = req.body;
 
-    if (email !== 'admin@desheures.com') {
+    if (email !== "admin@desheures.com") {
       return res
         .status(403)
-        .json({ message: 'Seul le super utilisateur peut se connecter.' });
+        .json({ message: "Seul le super utilisateur peut se connecter." });
     }
 
     try {
@@ -20,10 +20,10 @@ module.exports = {
         const hashedPassword = await bcrypt.hash(config.admin_password, 10);
 
         adminUser = new User({
-          username: 'Admin',
-          email: 'admin@desheures.com',
+          username: "Admin",
+          email: "admin@desheures.com",
           password: hashedPassword,
-          role: 'admin'
+          role: "admin"
         });
 
         await adminUser.save();
@@ -34,7 +34,7 @@ module.exports = {
         adminUser.password
       );
       if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Mot de passe incorrect.' });
+        return res.status(401).json({ message: "Mot de passe incorrect." });
       }
 
       const token = jwt.sign(
@@ -45,13 +45,12 @@ module.exports = {
           role: adminUser.role
         },
         config.env.jwt_secret,
-        { expiresIn: '1h' }
+        { expiresIn: "1h" }
       );
 
-      res.status(200).json({ message: 'Connexion réussie.', token });
+      res.status(200).json({ message: "Connexion réussie.", token });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Erreur serveur.' });
+      res.status(500).json({ message: "Erreur serveur. : ", error });
     }
   }
 };

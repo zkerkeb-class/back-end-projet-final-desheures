@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * @swagger
@@ -104,12 +104,12 @@ const ArtistSchema = new mongoose.Schema({
   albums: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Album'
+      ref: "Album"
     }
   ],
   createdAt: { type: Date, default: Date.now }
 });
 
-const Artist = mongoose.model('Artist', ArtistSchema);
+const Artist = mongoose.model("Artist", ArtistSchema);
 
 module.exports = Artist;
