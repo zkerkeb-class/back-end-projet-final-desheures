@@ -8,6 +8,8 @@ module.exports = {
     const { email, password } = req.body;
 
     if (email !== "admin@desheures.com") {
+      config.logger.info(email);
+      config.logger.info(password);
       return res
         .status(403)
         .json({ message: "Seul le super utilisateur peut se connecter." });
