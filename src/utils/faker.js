@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 const { faker } = require("@faker-js/faker");
-const config = require("./config");
-const Artist = require("./models/Artist");
-const Album = require("./models/Album");
-const Audio = require("./models/Audio");
-const Playlist = require("./models/Playlist");
+const config = require("../config");
+const Artist = require("../models/Artist");
+const Album = require("../models/Album");
+const Audio = require("../models/Audio");
+const Playlist = require("../models/Playlist");
 
 mongoose.connect(config.env.mongo_uri);
 

@@ -8,7 +8,9 @@
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "faker": "node src/utils/faker.js",
+    "clear:db": "node src/utils/clearDatabase.js"
   },
   "author": "",
   "license": "ISC",
