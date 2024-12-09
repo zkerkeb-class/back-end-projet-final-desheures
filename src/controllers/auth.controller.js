@@ -17,7 +17,7 @@ module.exports = {
       let adminUser = await User.findOne({ email });
 
       if (!adminUser) {
-        const hashedPassword = await bcrypt.hash(config.admin_password, 10);
+        const hashedPassword = await bcrypt.hash(config.env.admin_password, 10);
 
         adminUser = new User({
           username: "Admin",
