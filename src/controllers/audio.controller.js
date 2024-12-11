@@ -1,6 +1,71 @@
 const Audio = require("../models/Audio");
+const fs = require("fs");
+const path = require("path");
+
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffmpeg = require("fluent-ffmpeg");
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+
 
 module.exports = {
+
+  convertAudio: async(req, res) => {
+    try {
+      // Accéder aux données du fichier et du format
+      const { format } = req.body; // Le format est dans req.body
+      const file = req.file;
+      console.log("file : ",file);
+      // console.log("format : ",format);
+      // console.log("req.bod : ",req);
+
+
+      // Vérifier que le fichier a été téléchargé
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      // Vérifier que le format est spécifié
+      if (!format || format.length === 0) {
+        return res.status(400).json({ message: "Formats are required and must be an array" });
+      }
+
+      const outputDir = path.join(__dirname, "../../uploads/audios");
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir); // Crée le répertoire de sortie s'il n'existe pas
+      }
+      // Ici, ajoutez le code pour traiter la conversion du fichier, par exemple :
+      // const outputPath = path.join(outputDir, `${path.parse(fileName).name}.${format}`);
+
+      // ffmpeg(inputPath)
+      //   .toFormat(format)
+      //   .on("end", () => {
+      //     if (!res.headersSent) {
+      //       res.status(200).json({
+      //         message: `File successfully converted to ${format}`,
+      //         outputPath
+      //       });
+      //     }
+      //   })
+      //   .on("error", (err) => {
+      //     console.error(err);
+      //     if (!res.headersSent) {
+      //       res.status(500).json({
+      //         message: "An error occurred during conversion",
+      //         error: err.message
+      //       });
+      //     }
+      //   })
+      //   .save(outputPath);
+
+
+
+      res.json(file);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "An error occurred", error: error.message });
+    }
+  },
+
   createAudio: async (req, res) => {
     try {
       const audio = new Audio(req.body);

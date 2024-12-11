@@ -2,6 +2,11 @@ const express = require("express");
 const router = express.Router();
 const audioController = require("../controllers/audio.controller");
 const middlewares = require("../middlewares/");
+const multer = require("../middlewares/multer");
+
+router.use(express.json({ limit: "50mb" })); // Ajustez la limite si nécessaire
+router.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 
 /**
  * @swagger
@@ -156,5 +161,8 @@ router.get("/:id", audioController.getAudioById);
 router.post("/", middlewares.isAuth, audioController.createAudio);
 router.put("/:id", middlewares.isAuth, audioController.updateAudio);
 router.delete("/:id", middlewares.isAuth, audioController.deleteAudio);
+
+// router.post("/convert", multer.single({ name: "file", maxCount: 1 }), audioController.convertAudio);
+router.post("/convert", multer.single("file"), audioController.convertAudio);
 
 module.exports = router;
