@@ -1,118 +1,134 @@
 const mongoose = require("mongoose");
+const wavFileInfo = require("wav-file-info");
+const fs = require("fs/promises");
+const path = require("path");
 const { faker } = require("@faker-js/faker");
 const config = require("../config");
 const Artist = require("../models/Artist");
 const Album = require("../models/Album");
 const Audio = require("../models/Audio");
-const Playlist = require("../models/Playlist");
 
 mongoose.connect(config.env.mongo_uri);
 
-const createFakeData = async () => {
+const audioDirectory = path.join(__dirname, "../../uploads/audios/");
+
+const getAudioDuration = (filePath) => {
+  return new Promise((resolve) => {
+    const { getAudioDurationInSeconds } = require("get-audio-duration");
+    getAudioDurationInSeconds(filePath)
+      .then(resolve)
+      .catch((err) => {
+        config.logger.warn(
+          `Could not get duration for ${filePath}, using faker, ${err.message}`
+        );
+        resolve(faker.number.int({ min: 120, max: 300 }));
+      });
+  });
+};
+
+const getWavMetadata = (filePath) => {
+  return new Promise((resolve) => {
+    wavFileInfo.infoByFilename(filePath, (err, info) => {
+      if (err) {
+        config.logger.warn(
+          `Could not extract metadata for ${filePath}, using faker.`
+        );
+        return resolve(null);
+      }
+
+      const riffInfo = info.header;
+
+      const metadata = {
+        artist: riffInfo.artist || null,
+        album: riffInfo.album || null,
+        title: riffInfo.title || null
+      };
+
+      resolve(metadata);
+    });
+  });
+};
+
+const createFakeDataFromAudio = async () => {
   try {
     await Artist.deleteMany({});
     await Album.deleteMany({});
     await Audio.deleteMany({});
-    await Playlist.deleteMany({});
 
-    const artists = [];
-    const albums = [];
-    const audios = [];
-    const playlists = [];
+    const files = await fs.readdir(audioDirectory);
 
-    for (let i = 0; i < 10; i++) {
-      const artist = new Artist({
-        name: faker.person.fullName(),
-        namePhonetic: faker.word.noun(),
-        genres: [faker.music.genre(), faker.music.genre()],
-        bio: faker.lorem.paragraph(),
-        imageUrl: faker.image.avatar(),
-        socialLinks: [
-          { platform: "Twitter", url: faker.internet.url() },
-          { platform: "Instagram", url: faker.internet.url() }
-        ],
-        popularity: faker.number.int({ min: 0, max: 100 })
-      });
-      const savedArtist = await artist.save();
-      artists.push(savedArtist);
-    }
-    for (let i = 0; i < 15; i++) {
-      const artist = faker.helpers.arrayElement(artists);
-      const album = new Album({
-        title: faker.word.words({ count: { min: 2, max: 5 } }),
-        artist: artist._id,
-        releaseDate: faker.date.past(),
-        genres: artist.genres,
-        coverUrl: faker.image.urlLoremFlickr({
-          category: "music",
-          width: 300,
-          height: 300
-        }),
-        trackCount: 0,
-        popularity: faker.number.int({ min: 0, max: 100 })
-      });
-      const savedAlbum = await album.save();
-      artist.albums.push(savedAlbum._id);
-      await artist.save();
-      albums.push(savedAlbum);
-    }
+    for (const file of files) {
+      const filePath = path.join(audioDirectory, file);
 
-    // Créer des audios factices
-    for (let i = 0; i < 50; i++) {
-      const artist = faker.helpers.arrayElement(artists);
-      const album = faker.helpers.arrayElement(albums);
-      const audio = new Audio({
-        title: faker.word.words({ count: { min: 2, max: 5 } }),
-        artist: artist._id,
-        album: album._id,
-        duration: faker.number.int({ min: 120, max: 300 }), // Durée en secondes
-        audioUrl: faker.internet.url(),
-        lyrics: faker.lorem.paragraph(),
-        tempo: faker.number.int({ min: 60, max: 180 }),
-        mood: faker.word.adjective(),
-        genres: album.genres,
-        popularity: faker.number.int({ min: 0, max: 100 })
-      });
-      const savedAudio = await audio.save();
-      album.tracks.push(savedAudio._id);
-      album.trackCount++;
-      await album.save();
-      audios.push(savedAudio);
-    }
+      if (!file.toLowerCase().endsWith(".wav")) {
+        config.logger.warn(`Skipping unsupported file: ${file}`);
+        continue;
+      }
 
-    for (let i = 0; i < 5; i++) {
-      const playlistTracks = faker.helpers.arrayElements(audios, 10); // Sélectionner 10 pistes au hasard
-      const totalDuration = playlistTracks.reduce(
-        (sum, track) => sum + track.duration,
-        0
-      );
+      try {
+        const metadata = await getWavMetadata(filePath);
 
-      const playlist = new Playlist({
-        name: faker.word.words({ count: { min: 2, max: 5 } }),
-        description: faker.lorem.sentence(),
-        tracks: playlistTracks.map((track) => track._id),
-        coverUrl: faker.image.urlLoremFlickr({
-          category: "music",
-          width: 300,
-          height: 300
-        }),
-        trackCount: playlistTracks.length,
-        totalDuration,
-        popularity: faker.number.int({ min: 0, max: 100 })
-      });
-      const savedPlaylist = await playlist.save();
-      playlists.push(savedPlaylist);
+        const artistName = metadata?.artist || faker.person.fullName();
+        const albumName = metadata?.album || faker.word.words({ count: 3 });
+        const title =
+          metadata?.title || path.basename(file, path.extname(file));
+
+        let artist = await Artist.findOne({ name: artistName });
+        if (!artist) {
+          artist = new Artist({
+            name: artistName,
+            genres: [faker.music.genre()],
+            bio: faker.lorem.paragraph(),
+            imageUrl: faker.image.avatar()
+          });
+          artist = await artist.save();
+        }
+
+        let album = await Album.findOne({
+          title: albumName,
+          artist: artist._id
+        });
+        if (!album) {
+          album = new Album({
+            title: albumName,
+            artist: artist._id,
+            releaseDate: faker.date.past(),
+            genres: artist.genres,
+            coverUrl: faker.image.url()
+          });
+          album = await album.save();
+          artist.albums.push(album._id);
+          await artist.save();
+        }
+
+        const duration = await getAudioDuration(filePath);
+
+        const audio = new Audio({
+          title,
+          artist: artist._id,
+          album: album._id,
+          duration,
+          audioUrl: `/uploads/audio/${file}`,
+          genres: album.genres
+        });
+        await audio.save();
+
+        album.tracks.push(audio._id);
+        album.trackCount++;
+        await album.save();
+
+        config.logger.info(`Audio ajouté : ${audio.title}`);
+      } catch (parseError) {
+        config.logger.error(`Error processing file ${file}:`, parseError);
+      }
     }
 
-    config.logger.info("Data in mongoDB!");
+    config.logger.info("Données créées à partir des fichiers audio.");
     process.exit();
-  } catch (error) {
-    config.logger.error(
-      "Erreur lors de la création des données factices :",
-      error
-    );
+  } catch (err) {
+    config.logger.error("Erreur :", err);
     process.exit(1);
   }
 };
 
-createFakeData();
+createFakeDataFromAudio();
