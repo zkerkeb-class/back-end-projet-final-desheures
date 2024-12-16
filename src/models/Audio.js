@@ -105,6 +105,9 @@ const AudioSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  releaseDate: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
