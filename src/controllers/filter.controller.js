@@ -1,9 +1,9 @@
 const Album = require("../models/Album");
 const Audio = require("../models/Audio");
 const Artist = require("../models/Artist");
+const Playlist = require("../models/Playlist");
 
 module.exports = {
-  // Filtrer les albums par artiste
   getAlbumsByArtist: async (req, res) => {
     try {
       const { artistId } = req.params;
@@ -22,7 +22,6 @@ module.exports = {
     }
   },
 
-  // Filtrer les pistes audio par artiste
   getTracksByArtist: async (req, res) => {
     try {
       const { artistId } = req.params;
@@ -77,7 +76,6 @@ module.exports = {
     }
   },
 
-  // Filtrer les albums par genre
   getAlbumsByGenre: async (req, res) => {
     try {
       const { genre } = req.params;
@@ -188,6 +186,49 @@ module.exports = {
     } catch (error) {
       res.status(500).json({
         message: "Erreur lors de la récupération des pistes par durée",
+        error
+      });
+    }
+  },
+  getTracksByPopularity: async (req, res) => {
+    try {
+      const { minPopularity, maxPopularity } = req.query;
+
+      const popularityFilter = {
+        popularity: {
+          $gte: minPopularity || 0,
+          $lte: maxPopularity || 100
+        }
+      };
+
+      const tracks = await Audio.find(popularityFilter);
+
+      if (tracks.length === 0) {
+        return res.status(404).json({
+          message: "Aucune piste trouvée pour cette plage de popularité"
+        });
+      }
+
+      res.status(200).json(tracks);
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des pistes par popularité",
+        error
+      });
+    }
+  },
+
+  getTracksByPlaylist: async (req, res) => {
+    try {
+      const { playlistId } = req.params;
+      const playlist = await Playlist.findById(playlistId).populate("tracks");
+      if (!playlist) {
+        return res.status(404).json({ message: "Playlist introuvable" });
+      }
+      res.status(200).json(playlist.tracks);
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des pistes par playlist",
         error
       });
     }
