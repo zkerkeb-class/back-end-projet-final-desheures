@@ -7,6 +7,7 @@ const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const ffmpeg = require("fluent-ffmpeg");
 ffmpeg.setFfmpegPath(ffmpegPath);
 
+const config = require("../config");
 
 module.exports = {
 
@@ -85,6 +86,8 @@ module.exports = {
     try {
       const audio = new Audio(req.body);
       const savedAudio = await audio.save();
+
+      await config.redis.del("audios:all");
       res.status(201).json(savedAudio);
     } catch (error) {
       res
@@ -95,9 +98,20 @@ module.exports = {
 
   getAllAudios: async (req, res) => {
     try {
+      const cachedAudios = await config.redis.get("audios:all");
+
+      if (cachedAudios) {
+        return res.status(200).json(JSON.parse(cachedAudios));
+      }
+
       const audios = await Audio.find()
         .populate("artist", "name")
         .populate("album", "title");
+
+      await config.redis.set("audios:all", JSON.stringify(audios), {
+        EX: 3600
+      });
+
       res.status(200).json(audios);
     } catch (error) {
       res.status(500).json({
@@ -112,9 +126,22 @@ module.exports = {
       const audio = await Audio.findById(req.params.id)
         .populate("artist", "name")
         .populate("album", "title");
+
+      const cacheKey = `audios:${req.params.id}`;
+      const cachedAudio = await config.redis.get(cacheKey);
+
+      if (cachedAudio) {
+        return res.status(200).json(JSON.parse(cachedAudio));
+      }
+
       if (!audio) {
         return res.status(404).json({ message: "Audio non trouvé" });
       }
+
+      await config.redis.set(cacheKey, JSON.stringify(audio), {
+        EX: 3600
+      });
+
       res.status(200).json(audio);
     } catch (error) {
       res.status(500).json({
@@ -136,6 +163,14 @@ module.exports = {
       if (!updatedAudio) {
         return res.status(404).json({ message: "Audio non trouvé" });
       }
+
+      const cacheKey = `audios:${req.params.id}`;
+      await config.redis.set(cacheKey, JSON.stringify(updatedAudio), {
+        EX: 3600
+      });
+
+      await config.redis.del("audios:all");
+
       res.status(200).json(updatedAudio);
     } catch (error) {
       res
@@ -150,6 +185,10 @@ module.exports = {
       if (!deletedAudio) {
         return res.status(404).json({ message: "Audio non trouvé" });
       }
+      const cacheKey = `audios:${req.params.id}`;
+      await config.redis.del(cacheKey);
+
+      await config.redis.del("audios:all");
       res.status(200).json({
         message: "Audio supprimé avec succès",
         audio: deletedAudio
