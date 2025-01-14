@@ -1,4 +1,17 @@
+const fs = require("fs");
+const path = require("path");
 const pino = require("pino");
+
+const logsDir = path.resolve("./logs");
+const logFile = path.join(logsDir, "app.log");
+
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
+if (!fs.existsSync(logFile)) {
+  fs.writeFileSync(logFile, "");
+}
 
 const logger = pino({
   transport: {

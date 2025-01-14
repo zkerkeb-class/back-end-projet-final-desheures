@@ -1,10 +1,12 @@
 const Playlist = require("../models/Playlist");
-
+const config = require("../config");
 module.exports = {
   createPlaylist: async (req, res) => {
     try {
       const playlist = new Playlist(req.body);
       const savedPlaylist = await playlist.save();
+
+      await config.redis.del("playlists:all");
       res.status(201).json(savedPlaylist);
     } catch (error) {
       res
@@ -15,10 +17,20 @@ module.exports = {
 
   getAllPlaylists: async (req, res) => {
     try {
+      const cachedPlaylists = await config.redis.get("playlists:all");
+
+      if (cachedPlaylists) {
+        return res.status(200).json(JSON.parse(cachedPlaylists));
+      }
       const playlists = await Playlist.find().populate(
         "tracks",
         "title duration"
       );
+
+      await config.redis.set("playlists:all", JSON.stringify(playlists), {
+        EX: 3600
+      });
+
       res.status(200).json(playlists);
     } catch (error) {
       res.status(500).json({
@@ -34,9 +46,20 @@ module.exports = {
         "tracks",
         "title duration"
       );
+      const cacheKey = `playlists:${req.params.id}`;
+
+      const cachedPlaylist = await config.redis.get(cacheKey);
+      if (cachedPlaylist) {
+        return res.status(200).json(JSON.parse(cachedPlaylist));
+      }
       if (!playlist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }
+
+      await config.redis.set(cacheKey, JSON.stringify(playlist), {
+        EX: 3600
+      });
+
       res.status(200).json(playlist);
     } catch (error) {
       res.status(500).json({
@@ -56,6 +79,14 @@ module.exports = {
       if (!updatedPlaylist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }
+
+      const cacheKey = `playlists:${req.params.id}`;
+      await config.redis.set(cacheKey, JSON.stringify(updatedPlaylist), {
+        EX: 3600
+      });
+
+      await config.redis.del("playlists:all");
+
       res.status(200).json(updatedPlaylist);
     } catch (error) {
       res.status(400).json({
@@ -71,6 +102,10 @@ module.exports = {
       if (!deletedPlaylist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }
+      const cacheKey = `playlists:${req.params.id}`;
+      await config.redis.del(cacheKey);
+
+      await config.redis.del("playlists:all");
       res.status(200).json({
         message: "Playlist supprimée avec succès",
         playlist: deletedPlaylist

@@ -10,10 +10,12 @@ const requiredEnvVariables = [
   "MONGO_CLUSTER",
   "JWT_SECRET",
   "ADMIN_PASSWORD",
-  "MONGO_URI"
+  "MONGO_URI",
+  "REDIS_HOST",
+  "REDIS_PORT",
+  "REDIS_PASSWORD"
 ];
 
-// Vérification des variables d'environnement manquantes
 const missingEnvVariables = requiredEnvVariables.filter(
   (key) => !process.env[key]
 );
@@ -34,7 +36,10 @@ const env = {
   mongo_cluster: process.env.MONGO_CLUSTER,
   jwt_secret: process.env.JWT_SECRET,
   admin_password: process.env.ADMIN_PASSWORD,
-  mongo_uri: process.env.MONGO_URI
+  mongo_uri: process.env.MONGO_URI,
+  redis_host: process.env.REDIS_HOST,
+  redis_port: process.env.REDIS_PORT,
+  redis_password: process.env.REDIS_PASSWORD
 };
 
 module.exports = env;
