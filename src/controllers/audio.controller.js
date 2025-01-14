@@ -1,65 +1,80 @@
 const Audio = require("../models/Audio");
 const fs = require("fs");
 const path = require("path");
+const tmp = require("tmp");
 
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const ffmpeg = require("fluent-ffmpeg");
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 
-
 module.exports = {
 
   convertAudio: async(req, res) => {
     try {
-      // Accéder aux données du fichier et du format
-      const { format } = req.body; // Le format est dans req.body
-      const file = req.file;
-      console.log("file : ",file);
-      // console.log("format : ",format);
-      // console.log("req.bod : ",req);
+      const { buffer, originalname } = req.file;
+      const { format } = req.body;
 
-
-      // Vérifier que le fichier a été téléchargé
-      if (!file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      if (!buffer) {
+        return res.status(400).json({
+          message: "No file uploaded"
+        });
       }
-      // Vérifier que le format est spécifié
+      // Vérifier si le format est spécifié
       if (!format || format.length === 0) {
-        return res.status(400).json({ message: "Formats are required and must be an array" });
+        return res.status(400).json({
+          message: "Format is required"
+        });
       }
 
-      const outputDir = path.join(__dirname, "../../uploads/audios");
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir); // Crée le répertoire de sortie s'il n'existe pas
+      const uploadDir = "uploads/audios/";
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
-      // Ici, ajoutez le code pour traiter la conversion du fichier, par exemple :
-      // const outputPath = path.join(outputDir, `${path.parse(fileName).name}.${format}`);
+      // Créer le nom de fichier de sortie
+      const outputFileName = originalname.replace(/\.[^/.]+$/, `.${format}`);
+      const outputFilePath = path.join(uploadDir, outputFileName);
 
-      // ffmpeg(inputPath)
-      //   .toFormat(format)
-      //   .on("end", () => {
-      //     if (!res.headersSent) {
-      //       res.status(200).json({
-      //         message: `File successfully converted to ${format}`,
-      //         outputPath
-      //       });
-      //     }
-      //   })
-      //   .on("error", (err) => {
-      //     console.error(err);
-      //     if (!res.headersSent) {
-      //       res.status(500).json({
-      //         message: "An error occurred during conversion",
-      //         error: err.message
-      //       });
-      //     }
-      //   })
-      //   .save(outputPath);
+      // Créer un fichier temporaire pour le buffer audio
+      tmp.file({ postfix: path.extname(originalname) }, (err, tempFilePath) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to create temporary file", error: err.message });
+        }
 
+        // Écrire le buffer dans le fichier temporaire
+        fs.writeFile(tempFilePath, buffer, (err) => {
+          if (err) {
+            return res.status(500).json({ message: "Failed to write buffer to temp file", error: err.message });
+          }
 
+          // Créer le répertoire de sortie s'il n'existe pas
+          if (!fs.existsSync("uploads")) {
+            fs.mkdirSync("uploads", { recursive: true });
+          }
 
-      res.json(file);
+          // Utiliser FFmpeg pour convertir l'audio
+          ffmpeg()
+            .input(tempFilePath) // Utiliser le fichier temporaire
+            .toFormat(format) // Le format de sortie choisi par l'utilisateur
+            .output(outputFilePath)
+            .on("end", function() {
+              console.log("Audio conversion finished");
+              res.status(200).json({
+                message: "Audio uploaded, converted, and saved successfully",
+                filePath: outputFilePath
+              });
+            })
+            .on("error", function(err) {
+              console.error(err);
+              res.status(500).json({
+                message: "An error occurred during audio processing",
+                error: err.message
+              });
+            })
+            .run();
+        });
+      });
+
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "An error occurred", error: error.message });
