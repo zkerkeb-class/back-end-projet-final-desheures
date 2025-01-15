@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const { faker } = require("@faker-js/faker");
+const fs = require("fs");
+const path = require("path");
 const config = require("./config");
 const Artist = require("./models/Artist");
 const Album = require("./models/Album");
@@ -7,6 +9,21 @@ const Audio = require("./models/Audio");
 const Playlist = require("./models/Playlist");
 
 mongoose.connect(config.env.mongo_uri);
+
+const audioDir = path.join(__dirname, "../uploads/audios");
+const imageDir = path.join(__dirname, "../uploads/images");
+
+// Fonction pour récupérer les fichiers dans un dossier
+const getFilesFromDirectory = (directory) => {
+  try {
+    return fs
+      .readdirSync(directory)
+      .filter((file) => fs.statSync(path.join(directory, file)).isFile());
+  } catch (error) {
+    console.error(`Erreur lors de la lecture du dossier ${directory}:`, error);
+    return [];
+  }
+};
 
 const createFakeData = async () => {
   try {
@@ -20,13 +37,23 @@ const createFakeData = async () => {
     const audios = [];
     const playlists = [];
 
+    const audioFiles = getFilesFromDirectory(audioDir);
+    const imageFiles = getFilesFromDirectory(imageDir);
+
+    if (audioFiles.length === 0 || imageFiles.length === 0) {
+      console.error(
+        "Les dossiers audio ou image sont vides. Veuillez ajouter des fichiers."
+      );
+      process.exit(1);
+    }
+
     for (let i = 0; i < 10; i++) {
       const artist = new Artist({
         name: faker.person.fullName(),
         namePhonetic: faker.word.noun(),
         genres: [faker.music.genre(), faker.music.genre()],
         bio: faker.lorem.paragraph(),
-        imageUrl: faker.image.avatar(),
+        imageUrl: `uploads/images/${faker.helpers.arrayElement(imageFiles)}`,
         socialLinks: [
           { platform: "Twitter", url: faker.internet.url() },
           { platform: "Instagram", url: faker.internet.url() }
@@ -46,11 +73,7 @@ const createFakeData = async () => {
           artist: artist._id,
           releaseDate: faker.date.past(),
           genres: artist.genres,
-          coverUrl: faker.image.urlLoremFlickr({
-            category: "music",
-            width: 300,
-            height: 300
-          }),
+          coverUrl: `uploads/images/${faker.helpers.arrayElement(imageFiles)}`,
           trackCount: 0,
           popularity: faker.number.int({ min: 0, max: 100 })
         });
@@ -61,12 +84,18 @@ const createFakeData = async () => {
         albums.push(savedAlbum);
 
         for (let j = 0; j < 20; j++) {
+          if (audioFiles.length === 0) {
+            break;
+          }
+
+          const audioFile = faker.helpers.arrayElement(audioFiles);
+
           const audio = new Audio({
             title: faker.word.words({ count: { min: 2, max: 5 } }),
             artist: artist._id,
             album: savedAlbum._id,
             duration: faker.number.int({ min: 120, max: 300 }),
-            audioUrl: faker.internet.url(),
+            audioUrl: `uploads/audios/${audioFile}`,
             lyrics: faker.lorem.paragraph(),
             tempo: faker.number.int({ min: 60, max: 180 }),
             mood: faker.word.adjective(),
@@ -94,11 +123,7 @@ const createFakeData = async () => {
         name: faker.word.words({ count: { min: 2, max: 5 } }),
         description: faker.lorem.sentence(),
         tracks: playlistTracks.map((track) => track._id),
-        coverUrl: faker.image.urlLoremFlickr({
-          category: "music",
-          width: 300,
-          height: 300
-        }),
+        coverUrl: `uploads/images/${faker.helpers.arrayElement(imageFiles)}`,
         trackCount: playlistTracks.length,
         totalDuration,
         popularity: faker.number.int({ min: 0, max: 100 })
@@ -107,7 +132,7 @@ const createFakeData = async () => {
       playlists.push(savedPlaylist);
     }
 
-    config.logger.info("Data in mongoDB!");
+    config.logger.info("Données générées avec succès dans MongoDB !");
     process.exit();
   } catch (error) {
     config.logger.error(
