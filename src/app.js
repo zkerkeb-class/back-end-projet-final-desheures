@@ -17,19 +17,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
 app.use("/api", require("./routes/index"));
 
 config.connectToDatabase();
+config.clearCacheAndCreateData;
 config.redis;
-const redisTest = async () => {
-  try {
-    await config.redis.set("test_key", "test_value", { EX: 60 });
-    const value = await config.redis.get("test_key");
-    config.logger.info(`Redis test value: ${value}`);
-  } catch (err) {
-    config.logger.error("Redis test error:", err);
-  }
-};
 
-// Exécute le test Redis
-redisTest();
 app.listen(config.env.port, () => {
   config.logger.info(
     `Server is running on http://localhost:${config.env.port}`

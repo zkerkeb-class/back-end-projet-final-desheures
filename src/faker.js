@@ -47,6 +47,7 @@ const createFakeData = async () => {
       process.exit(1);
     }
 
+    // Création des données factices
     for (let i = 0; i < 10; i++) {
       const artist = new Artist({
         name: faker.person.fullName(),

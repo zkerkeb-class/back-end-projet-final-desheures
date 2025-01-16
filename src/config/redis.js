@@ -17,8 +17,15 @@ redisClient.on("connect", () => {
   logger.info("Redis client is connecting...");
 });
 
-redisClient.on("ready", () => {
+redisClient.on("ready", async () => {
   logger.info("Redis client is ready to use");
+
+  try {
+    await redisClient.flushAll();
+    logger.info("Redis cache cleared on initialization.");
+  } catch (err) {
+    logger.error("Failed to clear Redis cache on initialization:", err);
+  }
 });
 
 redisClient
