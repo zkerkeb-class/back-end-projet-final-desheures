@@ -3,13 +3,19 @@ const middlewares = require("./middlewares");
 const config = require("./config");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
+const path = require("path");
 
 app.use(express.json());
 app.use(...middlewares.bodyParser);
 app.use(middlewares.corsOptions);
-app.use(middlewares.rateLimiter);
+// app.use(middlewares.rateLimiter);
 app.use(middlewares.helmet);
 
+app.use(
+  "/uploads/images",
+  middlewares.corsOptions,
+  express.static(path.join(__dirname, "/../uploads/images"))
+);
 app.get("/", (req, res) => {
   res.send({ message: "Welcome to DesHeures API Application" });
 });
