@@ -11,8 +11,6 @@ module.exports = {
       // Importer `metaphone` dynamiquement pour les projets CommonJS
       const { default: metaphone } = await import("metaphone");
 
-      const result = metaphone("Caroline");
-      console.log(result);
       const { query, artist, album, genre, mood, lyrics, similarTo } =
         req.query;
 
