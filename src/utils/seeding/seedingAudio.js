@@ -15,14 +15,12 @@ const mongoose = require("mongoose");
 const config = require("../../config");
 const crypto = require("crypto");
 
-// Configuration
 const audioDirectory = path.join(__dirname, "../../../uploads/audios/mp3");
 const wavDirectory = path.join(__dirname, "../../../uploads/audios/wav");
 const imageDirectory = path.join(__dirname, "../../../uploads/images");
-const DEFAULT_COVER = "uploads/images/default_cover.jpg";
-const DEFAULT_ARTIST_IMAGE = "uploads/images/default_artist.jpg";
+const DEFAULT_COVER = "uploads/images/default_cover.webp";
+const DEFAULT_ARTIST_IMAGE = "uploads/images/default_artist.webp";
 
-// Chemins relatifs
 const RELATIVE_WAV_PATH = "uploads/audios/wav";
 
 const GENRES = [
@@ -44,43 +42,36 @@ const GENRES = [
     fs.mkdirSync(dir, { recursive: true });
   }
 });
+
 mongoose
   .connect(config.env.mongo_uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
-  .then(() => logger.success("Connexion à MongoDB réussie !"))
+  .then(() => config.logger.info("Connexion à MongoDB réussie !"))
   .catch((err) => {
-    logger.error("Erreur de connexion à MongoDB:", err);
+    config.logger.error("Erreur de connexion à MongoDB:", err);
     process.exit(1);
   });
 
-// Logger setup
-const logger = {
-  info: (msg) => console.log(`[INFO] ${msg}`),
-  error: (msg, err) => console.error(`[ERROR] ${msg}`, err),
-  success: (msg) => console.log(`[SUCCESS] ${msg}`),
-  warning: (msg) => console.log(`[WARNING] ${msg}`)
-};
-
-// Fonction de conversion MP3 vers WAV
 const convertToWav = async (inputPath, outputPath) => {
   return new Promise((resolve, reject) => {
     ffmpeg(inputPath)
       .toFormat("wav")
       .on("error", (err) => {
-        logger.error(`Erreur lors de la conversion en WAV: ${err.message}`);
+        config.logger.error(
+          `Erreur lors de la conversion en WAV: ${err.message}`
+        );
         reject(err);
       })
       .on("end", () => {
-        logger.success(`Conversion WAV terminée: ${outputPath}`);
+        config.logger.info(`Conversion WAV terminée: ${outputPath}`);
         resolve();
       })
       .save(outputPath);
   });
 };
 
-// Fonction pour vérifier si une image existe déjà pour un artiste/album
 const getExistingImageUrl = async (name, type) => {
   try {
     if (type === "artist") {
@@ -96,7 +87,7 @@ const getExistingImageUrl = async (name, type) => {
     }
     return null;
   } catch (error) {
-    logger.error(
+    config.logger.error(
       `Erreur lors de la recherche d'image existante pour ${type} ${name}:`,
       error
     );
@@ -104,57 +95,68 @@ const getExistingImageUrl = async (name, type) => {
   }
 };
 
-const convertAndSaveImage = async (imageBuffer, name, type = "album") => {
+const convertAndSaveImage = async (imageBuffer) => {
   try {
-    // Si pas d'image fournie, retourner l'image par défaut
+    // If no image provided, return null
     if (!imageBuffer) {
-      return type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE;
+      return null;
     }
 
-    // Vérifier si une image existe déjà
-    const existingImageUrl = await getExistingImageUrl(name, type);
-    if (existingImageUrl) {
-      logger.info(
-        `Image existante trouvée pour ${type} ${name}: ${existingImageUrl}`
-      );
-      return existingImageUrl;
-    }
-
-    // Créer un hash unique basé sur le contenu de l'image et le nom
+    // Generate hash just based on image buffer
     const imageHash = crypto
       .createHash("md5")
       .update(imageBuffer)
-      .update(name)
-      .update(type)
       .digest("hex");
 
     const imageName = `${imageHash}.webp`;
     const imagePath = path.join(imageDirectory, imageName);
     const relativeImagePath = `uploads/images/${imageName}`;
 
-    // Vérifier si le fichier existe déjà sur le disque
+    // If image already exists, return its path
     if (fs.existsSync(imagePath)) {
-      logger.info(
-        `Image existe déjà sur le disque pour ${type} ${name}: ${relativeImagePath}`
+      config.logger.info(
+        `Image existe déjà sur le disque: ${relativeImagePath}`
       );
       return relativeImagePath;
     }
 
-    // Convertir et sauvegarder la nouvelle image
+    // Convert and save new image
     await sharp(imageBuffer).webp({ quality: 80 }).toFile(imagePath);
-    logger.success(
-      `Nouvelle image convertie et sauvegardée pour ${type} ${name}`
-    );
+    config.logger.info("Nouvelle image convertie et sauvegardée");
 
     return relativeImagePath;
   } catch (error) {
-    logger.error(
-      `Erreur lors de la conversion de l'image pour ${type} ${name}:`,
+    config.logger.error("Erreur lors de la conversion de l'image:", error);
+    return null;
+  }
+};
+
+const getImageUrlForEntity = async (imageBuffer, name, type) => {
+  try {
+    // Check if entity already has an image
+    const existingImageUrl = await getExistingImageUrl(name, type);
+    if (
+      existingImageUrl &&
+      existingImageUrl !== DEFAULT_COVER &&
+      existingImageUrl !== DEFAULT_ARTIST_IMAGE
+    ) {
+      return existingImageUrl;
+    }
+
+    // Convert and save image if provided, otherwise return default
+    const savedImageUrl = await convertAndSaveImage(imageBuffer);
+    return (
+      savedImageUrl || (type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE)
+    );
+  } catch (error) {
+    config.logger.error(
+      `Erreur lors du traitement de l'image pour ${type} ${name}:`,
       error
     );
     return type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE;
   }
 };
+
 const parseFileName = (fileName) => {
   const parts = fileName.replace(".mp3", "").split(" - ");
 
@@ -169,8 +171,8 @@ const createOrUpdateArtist = async (artistName, tags) => {
   let artist = await Artist.findOne({ name: artistName });
 
   if (!artist) {
-    const imageUrl = await convertAndSaveImage(
-      tags.image ? tags.image.imageBuffer : null,
+    const imageUrl = await getImageUrlForEntity(
+      tags.image?.imageBuffer,
       artistName,
       "artist"
     );
@@ -184,19 +186,18 @@ const createOrUpdateArtist = async (artistName, tags) => {
       imageUrl
     });
     await artist.save();
-    logger.success(`Nouvel artiste créé: ${artistName}`);
+    config.logger.info(`Nouvel artiste créé: ${artistName}`);
   } else if (
     tags.image?.imageBuffer &&
     artist.imageUrl === DEFAULT_ARTIST_IMAGE
   ) {
-    // Mettre à jour l'image si c'était l'image par défaut et qu'on a une nouvelle image
-    artist.imageUrl = await convertAndSaveImage(
-      tags.image.imageBuffer,
+    artist.imageUrl = await getImageUrlForEntity(
+      tags.image?.imageBuffer,
       artistName,
       "artist"
     );
     await artist.save();
-    logger.info(`Image mise à jour pour l'artiste: ${artistName}`);
+    config.logger.info(`Image mise à jour pour l'artiste: ${artistName}`);
   }
 
   return artist;
@@ -213,8 +214,8 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
   });
 
   if (!album) {
-    const coverUrl = await convertAndSaveImage(
-      tags.image ? tags.image.imageBuffer : null,
+    const coverUrl = await getImageUrlForEntity(
+      tags.image?.imageBuffer,
       albumName,
       "album"
     );
@@ -238,19 +239,20 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
       artist.albums.push(album._id);
       artist.genres = [...new Set([...artist.genres, ...albumGenres])];
       await artist.save();
-      logger.info(`Album ${albumName} ajouté à l'artiste ${artist.name}`);
+      config.logger.info(
+        `Album ${albumName} ajouté à l'artiste ${artist.name}`
+      );
     }
 
-    logger.success(`Nouvel album créé: ${albumName}`);
+    config.logger.info(`Nouvel album créé: ${albumName}`);
   } else if (tags.image?.imageBuffer && album.coverUrl === DEFAULT_COVER) {
-    // Mettre à jour l'image si c'était l'image par défaut et qu'on a une nouvelle image
-    album.coverUrl = await convertAndSaveImage(
-      tags.image.imageBuffer,
+    album.coverUrl = await getImageUrlForEntity(
+      tags.image?.imageBuffer,
       albumName,
       "album"
     );
     await album.save();
-    logger.info(`Image mise à jour pour l'album: ${albumName}`);
+    config.logger.info(`Image mise à jour pour l'album: ${albumName}`);
   }
 
   return album;
@@ -261,7 +263,7 @@ const seedAudiosFromFiles = async () => {
     const files = fs
       .readdirSync(audioDirectory)
       .filter((file) => file.endsWith(".mp3"));
-    logger.info(`Début du traitement de ${files.length} fichiers`);
+    config.logger.info(`Début du traitement de ${files.length} fichiers`);
 
     for (const file of files) {
       const mp3FilePath = path.join(audioDirectory, file);
@@ -273,7 +275,10 @@ const seedAudiosFromFiles = async () => {
         try {
           await convertToWav(mp3FilePath, wavFilePath);
         } catch (error) {
-          logger.error(`Erreur lors de la conversion de ${file}:`, error);
+          config.logger.error(
+            `Erreur lors de la conversion de ${file}:`,
+            error
+          );
           continue;
         }
       }
@@ -305,7 +310,7 @@ const seedAudiosFromFiles = async () => {
           artist: artist._id,
           album: album ? album._id : null,
           duration,
-          audioUrl: relativeWAVPath, // Uniquement l'URL WAV
+          audioUrl: relativeWAVPath,
           genres: album ? album.genres : artist.genres,
           trackNumber: tags.trackNumber,
           popularity: faker.number.int({ min: 0, max: 100 })
@@ -317,15 +322,15 @@ const seedAudiosFromFiles = async () => {
           await album.save();
         }
 
-        logger.success(
+        config.logger.info(
           `Audio "${finalTrackName}" ajouté${album ? ` à l'album "${finalAlbumName}"` : ""} de ${finalArtistName}`
         );
       }
     }
 
-    logger.success("Seeding des audios terminé avec succès !");
+    config.logger.info("Seeding des audios terminé avec succès !");
   } catch (error) {
-    logger.error("Erreur lors du seeding:", error);
+    config.logger.error("Erreur lors du seeding:", error);
   } finally {
     mongoose.connection.close();
   }

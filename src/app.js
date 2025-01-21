@@ -12,6 +12,11 @@ app.use(
   middlewares.corsOptions,
   express.static(path.join(__dirname, "/../uploads/images"))
 );
+app.use(
+  "/uploads/audios/wav",
+  middlewares.corsOptions,
+  express.static(path.join(__dirname, "/../uploads/audios/wav"))
+);
 app.use("*", middlewares.corsOptions);
 // app.use(middlewares.rateLimiter);
 app.use(middlewares.helmet);
