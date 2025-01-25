@@ -88,7 +88,7 @@ const getExistingImageUrl = async (name, type) => {
     return null;
   } catch (error) {
     config.logger.error(
-      `Erreur lors de la recherche d'image existante pour ${type} ${name}:`,
+      ` Erreur lors de la recherche d'image existante pour ${type} ${name}:`,
       error
     );
     return null;
@@ -97,12 +97,10 @@ const getExistingImageUrl = async (name, type) => {
 
 const convertAndSaveImage = async (imageBuffer) => {
   try {
-    // If no image provided, return null
     if (!imageBuffer) {
       return null;
     }
 
-    // Generate hash just based on image buffer
     const imageHash = crypto
       .createHash("md5")
       .update(imageBuffer)
@@ -112,7 +110,6 @@ const convertAndSaveImage = async (imageBuffer) => {
     const imagePath = path.join(imageDirectory, imageName);
     const relativeImagePath = `uploads/images/${imageName}`;
 
-    // If image already exists, return its path
     if (fs.existsSync(imagePath)) {
       config.logger.info(
         `Image existe déjà sur le disque: ${relativeImagePath}`
@@ -150,7 +147,7 @@ const getImageUrlForEntity = async (imageBuffer, name, type) => {
     );
   } catch (error) {
     config.logger.error(
-      `Erreur lors du traitement de l'image pour ${type} ${name}:`,
+      ` Erreur lors du traitement de l'image pour ${type} ${name}:`,
       error
     );
     return type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE;
@@ -323,7 +320,7 @@ const seedAudiosFromFiles = async () => {
         }
 
         config.logger.info(
-          `Audio "${finalTrackName}" ajouté${album ? ` à l'album "${finalAlbumName}"` : ""} de ${finalArtistName}`
+          `Audio "${finalTrackName}" ajouté ${album ? ` "  à l'album "${finalAlbumName}"` : ""} de ${finalArtistName}`
         );
       }
     }

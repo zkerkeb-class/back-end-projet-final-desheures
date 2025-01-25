@@ -4,7 +4,7 @@ const config = require("./config");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
-
+const { startScheduledBackups } = require("./utils/backup/backup.cron");
 app.use(express.json());
 app.use(...middlewares.bodyParser);
 app.use(
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
 app.use("/api", require("./routes/index"));
 
+startScheduledBackups();
 config.connectToDatabase();
 config.clearCacheAndCreateData;
 config.redis;
