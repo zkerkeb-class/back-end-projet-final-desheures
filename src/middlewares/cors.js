@@ -13,7 +13,7 @@ const corsOptions = {
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  credentials: true // Autorise les cookies/jetons
 };
 
 module.exports = cors(corsOptions);
