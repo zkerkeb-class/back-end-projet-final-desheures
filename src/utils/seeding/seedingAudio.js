@@ -216,7 +216,11 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
       albumName,
       "album"
     );
+    const releaseYear =
+      tags.year ||
+      (tags.date ? tags.date.split("-")[0] : new Date().getFullYear());
 
+    const releaseDate = new Date(Number(releaseYear), 0);
     const albumGenres = tags.genre
       ? [tags.genre]
       : [faker.helpers.arrayElement(GENRES)];
@@ -224,7 +228,7 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
     album = new Album({
       title: albumName,
       artist: artist._id,
-      releaseDate: new Date(tags.year || new Date().getFullYear(), 0),
+      releaseDate: releaseDate,
       genres: albumGenres,
       coverUrl,
       popularity: faker.number.int({ min: 0, max: 100 }),
@@ -292,7 +296,6 @@ const seedAudiosFromFiles = async () => {
       const artist = await createOrUpdateArtist(finalArtistName, tags);
       const album = await createOrUpdateAlbum(finalAlbumName, artist, tags);
 
-      // Chemin relatif pour le WAV
       const relativeWAVPath = `${RELATIVE_WAV_PATH}/${wavFileName}`;
 
       let audio = await Audio.findOne({
@@ -302,6 +305,11 @@ const seedAudiosFromFiles = async () => {
       });
 
       if (!audio) {
+        const releaseYear =
+          tags.year ||
+          (tags.date ? tags.date.split("-")[0] : new Date().getFullYear());
+
+        const releaseDate = new Date(Number(releaseYear), 0);
         audio = new Audio({
           title: finalTrackName,
           artist: artist._id,
@@ -309,8 +317,8 @@ const seedAudiosFromFiles = async () => {
           duration,
           audioUrl: relativeWAVPath,
           genres: album ? album.genres : artist.genres,
-          trackNumber: tags.trackNumber,
-          popularity: faker.number.int({ min: 0, max: 100 })
+          popularity: faker.number.int({ min: 0, max: 100 }),
+          releaseDate: releaseDate
         });
         await audio.save();
 

@@ -3,7 +3,7 @@ const { performBackup } = require("./performBackup");
 const config = require("../../config");
 
 // Planifier le backup tous les jours à 3h du matin
-cron.schedule("38 10 * * *", async () => {
+cron.schedule("0 3 * * *", async () => {
   config.logger.info("Démarrage du backup planifié");
 
   try {
