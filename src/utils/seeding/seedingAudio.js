@@ -232,7 +232,8 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
       genres: albumGenres,
       coverUrl,
       popularity: faker.number.int({ min: 0, max: 100 }),
-      tracks: []
+      tracks: [],
+      trackCount: 0
     });
     await album.save();
 
@@ -246,14 +247,26 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
     }
 
     config.logger.info(`Nouvel album créé: ${albumName}`);
-  } else if (tags.image?.imageBuffer && album.coverUrl === DEFAULT_COVER) {
-    album.coverUrl = await getImageUrlForEntity(
-      tags.image?.imageBuffer,
-      albumName,
-      "album"
-    );
+  } else {
+    // Met à jour l'image si nécessaire
+    if (tags.image?.imageBuffer && album.coverUrl === DEFAULT_COVER) {
+      album.coverUrl = await getImageUrlForEntity(
+        tags.image?.imageBuffer,
+        albumName,
+        "album"
+      );
+      config.logger.info(`Image mise à jour pour l'album: ${albumName}`);
+    }
+
+    // Synchronise trackCount avec le nombre de pistes
+    if (album.tracks.length !== album.trackCount) {
+      album.trackCount = album.tracks.length;
+      config.logger.info(
+        `trackCount mis à jour pour l'album: ${albumName} (${album.trackCount} tracks)`
+      );
+    }
+
     await album.save();
-    config.logger.info(`Image mise à jour pour l'album: ${albumName}`);
   }
 
   return album;
