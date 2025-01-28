@@ -8,149 +8,342 @@ const {
   customLevenshteinDistance
 } = require("../utils/metaphone/metaphone");
 
-module.exports = {
+const CACHE_TTL = 3600;
+const searchCache = new Map();
+const genresCache = {
+  genres: null,
+  timestamp: null
+};
+
+const SIMILARITY_WEIGHTS = {
+  genreWeight: 0.4,
+  moodWeight: 0.4,
+  tempoWeight: 0.2,
+  tempoRange: 10
+};
+
+const controller = {
   search: async (req, res) => {
     try {
-      const { query, artist, genre, mood, lyrics, similarTo } = req.query;
-      config.logger.info("genre : ", genre);
+      const {
+        query,
+        artist,
+        genre,
+        mood,
+        lyrics,
+        similarTo,
+        page = 1,
+        limit = 20
+      } = req.query;
+      const skip = (page - 1) * limit;
+
+      // Si un genre est spécifié, trouvez le genre le plus proche
+      let correctedGenre = null;
+      if (genre) {
+        correctedGenre = await controller.findClosestGenre(genre);
+        if (correctedGenre !== genre) {
+          config.logger.info(`Genre corrigé: ${genre} -> ${correctedGenre}`);
+        }
+      }
+
       const results = {
         artists: [],
         albums: [],
         tracks: [],
         playlists: [],
-        autoComplete: { suggestions: [] }
-      };
-
-      const searchConditions = [];
-
-      if (query) {
-        const keywords = query.split(/\s+/);
-        const queryPhonetic = customMetaphone(query);
-
-        searchConditions.push({
-          $or: [
-            ...keywords.map((keyword) => ({
-              $or: [
-                { "artists.name": new RegExp(keyword, "i") },
-                { title: new RegExp(keyword, "i") },
-                { name: new RegExp(keyword, "i") },
-                { lyrics: new RegExp(keyword, "i") }
-              ]
-            }))
-          ]
-        });
-
-        // Recherche phonétique étendue
-        const allArtists = await Artist.find({});
-        const phoneticArtists = allArtists.filter((a) => {
-          const namePhonetic = customMetaphone(a.name);
-          const distance = customLevenshteinDistance(
-            queryPhonetic,
-            namePhonetic
-          );
-          return distance <= 2;
-        });
-
-        results.artists = await Artist.find({
-          $or: [
-            { _id: { $in: phoneticArtists.map((a) => a._id) } },
-            { name: new RegExp(query, "i") },
-            { genres: new RegExp(query, "i") }
-          ]
-        });
-
-        results.tracks = await Audio.find({
-          $or: [
-            { title: new RegExp(query, "i") },
-            { genres: new RegExp(query, "i") },
-            { lyrics: new RegExp(query, "i") }
-          ]
-        }).populate("artist album");
-
-        results.albums = await Album.find({
-          $or: [
-            { title: new RegExp(query, "i") },
-            { genres: new RegExp(query, "i") }
-          ]
-        }).populate("artist");
-      }
-
-      // Recherche phonétique pour les artistes
-      if (artist) {
-        const artistPhonetic = customMetaphone(artist);
-        const allArtists = await Artist.find({});
-
-        results.artists = allArtists.filter((a) => {
-          const namePhonetic = customMetaphone(a.name);
-          const distance = customLevenshteinDistance(
-            artistPhonetic,
-            namePhonetic
-          );
-
-          return (
-            distance <= 2 || a.name.toLowerCase().includes(artist.toLowerCase())
-          );
-        });
-      }
-
-      const additionalFilters = {};
-      if (genre) {
-        additionalFilters.genres = genre;
-      }
-      if (mood) {
-        additionalFilters.mood = new RegExp(mood, "i");
-      }
-      if (lyrics) {
-        additionalFilters.lyrics = new RegExp(lyrics, "i");
-      }
-
-      if (similarTo) {
-        const track = await Audio.findById(similarTo);
-        if (track) {
-          results.tracks = await Audio.find({
-            _id: { $ne: track._id },
-            genres: { $in: track.genres },
-            mood: track.mood,
-            tempo: {
-              $gte: track.tempo - 10,
-              $lte: track.tempo + 10
-            }
-          }).populate("artist album");
+        autoComplete: { suggestions: [] },
+        pagination: {
+          page,
+          limit,
+          total: 0
         }
-      }
-
-      if (query) {
-        const autoCompleteRegex = new RegExp(`^${query}`, "i");
-        const autoCompleteArtists = await Artist.find({
-          name: autoCompleteRegex
-        }).limit(5);
-        const autoCompleteTracks = await Audio.find({
-          title: autoCompleteRegex
-        }).limit(5);
-
-        results.autoComplete.suggestions = [
-          ...autoCompleteArtists.map((a) => a.name),
-          ...autoCompleteTracks.map((t) => t.title)
-        ];
-      }
-
-      const finalQuery = {
-        $and: [...searchConditions, additionalFilters]
       };
 
-      results.artists = await Artist.find(finalQuery);
-      results.albums = await Album.find(finalQuery).populate("artist");
-      results.tracks = await Audio.find(finalQuery)
-        .populate("artist")
-        .populate("album");
-      results.playlists = await Playlist.find(finalQuery);
+      // Ajouter l'information de correction si nécessaire
+      if (correctedGenre && correctedGenre !== genre) {
+        results.correction = {
+          original: genre,
+          corrected: correctedGenre,
+          message: `Recherche effectuée pour "${correctedGenre}" au lieu de "${genre}"`
+        };
+      }
+
+      // Recherche phonétique des artistes
+      if (artist) {
+        results.artists = await controller.searchArtistsPhonetically(artist);
+      }
+
+      // Recherche par similarité
+      if (similarTo) {
+        results.tracks = await controller.findSimilarTracks(
+          similarTo,
+          SIMILARITY_WEIGHTS
+        );
+      } else {
+        // Recherche standard
+        const searchQuery = await controller.buildSearchQuery({
+          query,
+          genre: correctedGenre || genre,
+          mood,
+          lyrics
+        });
+
+        // Exécution parallèle des requêtes
+        const [artists, albums, tracks, playlists, total] = await Promise.all([
+          Artist.find(searchQuery).skip(skip).limit(limit),
+          Album.find(searchQuery).populate("artist").skip(skip).limit(limit),
+          Audio.find(searchQuery)
+            .populate("artist album")
+            .skip(skip)
+            .limit(limit),
+          Playlist.find(searchQuery).skip(skip).limit(limit),
+          Audio.countDocuments(searchQuery)
+        ]);
+
+        results.artists = artists;
+        results.albums = albums;
+        results.tracks = tracks;
+        results.playlists = playlists;
+        results.pagination.total = total;
+      }
+
+      // Autocomplétion
+      if (query) {
+        results.autoComplete.suggestions =
+          await controller.getAutocompleteSuggestions(query);
+      }
 
       res.status(200).json(results);
     } catch (error) {
+      config.logger.error(`Erreur lors de la recherche: ${error.message}`);
       res.status(500).json({
         message: "Une erreur est survenue lors de la recherche.",
         error: error.message
       });
     }
+  },
+
+  searchArtistsPhonetically: async (query, maxDistance = 2) => {
+    const queryPhonetic = customMetaphone(query);
+
+    return await Artist.aggregate([
+      {
+        $addFields: {
+          phoneticName: {
+            $function: {
+              body: function (name) {
+                return customMetaphone(name);
+              },
+              args: ["$name"],
+              lang: "js"
+            }
+          },
+          phoneticDistance: {
+            $function: {
+              body: function (name, queryPhonetic) {
+                return customLevenshteinDistance(
+                  customMetaphone(name),
+                  queryPhonetic
+                );
+              },
+              args: ["$name", queryPhonetic],
+              lang: "js"
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { phoneticDistance: { $lte: maxDistance } },
+            { name: new RegExp(query, "i") }
+          ]
+        }
+      },
+      {
+        $sort: { phoneticDistance: 1 }
+      }
+    ]);
+  },
+
+  findSimilarTracks: async (trackId, options) => {
+    const track = await Audio.findById(trackId);
+    if (!track) {
+      return [];
+    }
+
+    return await Audio.aggregate([
+      {
+        $match: {
+          _id: { $ne: track._id },
+          genres: { $in: track.genres },
+          mood: track.mood,
+          tempo: {
+            $gte: track.tempo - options.tempoRange,
+            $lte: track.tempo + options.tempoRange
+          }
+        }
+      },
+      {
+        $addFields: {
+          similarityScore: {
+            $add: [
+              {
+                $multiply: [
+                  {
+                    $divide: [
+                      {
+                        $size: { $setIntersection: ["$genres", track.genres] }
+                      },
+                      { $size: track.genres }
+                    ]
+                  },
+                  options.genreWeight
+                ]
+              },
+              {
+                $cond: [{ $eq: ["$mood", track.mood] }, options.moodWeight, 0]
+              },
+              {
+                $multiply: [
+                  {
+                    $divide: [
+                      {
+                        $subtract: [
+                          options.tempoRange,
+                          { $abs: { $subtract: ["$tempo", track.tempo] } }
+                        ]
+                      },
+                      options.tempoRange
+                    ]
+                  },
+                  options.tempoWeight
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        $sort: { similarityScore: -1 }
+      },
+      {
+        $limit: 10
+      }
+    ]);
+  },
+
+  getAutocompleteSuggestions: async (query) => {
+    const cacheKey = `autocomplete:${query.toLowerCase()}`;
+
+    if (searchCache.has(cacheKey)) {
+      const { data, timestamp } = searchCache.get(cacheKey);
+      if (Date.now() - timestamp < CACHE_TTL * 1000) {
+        return data;
+      }
+    }
+
+    const autoCompleteRegex = new RegExp(`^${query}`, "i");
+
+    const [artists, tracks] = await Promise.all([
+      Artist.find({ name: autoCompleteRegex }).select("name").limit(5),
+      Audio.find({ title: autoCompleteRegex }).select("title").limit(5)
+    ]);
+
+    const suggestions = [
+      ...artists.map((a) => ({ type: "artist", value: a.name })),
+      ...tracks.map((t) => ({ type: "track", value: t.title }))
+    ];
+
+    searchCache.set(cacheKey, {
+      data: suggestions,
+      timestamp: Date.now()
+    });
+
+    return suggestions;
+  },
+
+  getAvailableGenres: async () => {
+    // Vérifier si le cache est valide (moins d'une heure)
+    if (
+      genresCache.genres &&
+      genresCache.timestamp &&
+      Date.now() - genresCache.timestamp < CACHE_TTL * 1000
+    ) {
+      return genresCache.genres;
+    }
+
+    // Récupérer tous les genres uniques de la base de données
+    const [albumGenres, audioGenres, artistGenres] = await Promise.all([
+      Album.distinct("genres"),
+      Audio.distinct("genres"),
+      Artist.distinct("genres")
+    ]);
+
+    // Créer un ensemble unique de genres
+    const allGenres = Array.from(
+      new Set([...albumGenres, ...audioGenres, ...artistGenres])
+    );
+
+    // Mettre à jour le cache
+    genresCache.genres = allGenres;
+    genresCache.timestamp = Date.now();
+
+    return allGenres;
+  },
+
+  findClosestGenre: async (searchedGenre, maxDistance = 2) => {
+    const availableGenres = await controller.getAvailableGenres();
+    const searchedPhonetic = customMetaphone(searchedGenre.toLowerCase());
+
+    let closestMatch = null;
+    let smallestDistance = Infinity;
+
+    for (const genre of availableGenres) {
+      const genrePhonetic = customMetaphone(genre.toLowerCase());
+      const distance = customLevenshteinDistance(
+        searchedPhonetic,
+        genrePhonetic
+      );
+
+      if (distance < smallestDistance && distance <= maxDistance) {
+        smallestDistance = distance;
+        closestMatch = genre;
+      }
+    }
+
+    return closestMatch || searchedGenre;
+  },
+
+  buildSearchQuery: async ({ query, genre, mood, lyrics }) => {
+    const searchQuery = {};
+
+    if (query) {
+      const keywords = query.split(/\s+/);
+      searchQuery.$or = keywords.map((keyword) => ({
+        $or: [
+          { "artists.name": new RegExp(keyword, "i") },
+          { title: new RegExp(keyword, "i") },
+          { name: new RegExp(keyword, "i") },
+          { lyrics: new RegExp(keyword, "i") }
+        ]
+      }));
+    }
+
+    if (genre) {
+      const closestGenre = await controller.findClosestGenre(genre);
+      searchQuery.genres = new RegExp(`^${closestGenre}$`, "i");
+    }
+
+    if (mood) {
+      searchQuery.mood = new RegExp(mood, "i");
+    }
+    if (lyrics) {
+      searchQuery.lyrics = new RegExp(lyrics, "i");
+    }
+
+    return searchQuery;
   }
 };
+
+module.exports = controller;

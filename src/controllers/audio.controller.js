@@ -10,8 +10,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const config = require("../config");
 
 module.exports = {
-
-  convertAudio: async(req, res) => {
+  convertAudio: async (req, res) => {
     try {
       const { buffer, originalname } = req.file;
       const { format } = req.body;
@@ -39,13 +38,19 @@ module.exports = {
       // Créer un fichier temporaire pour le buffer audio
       tmp.file({ postfix: path.extname(originalname) }, (err, tempFilePath) => {
         if (err) {
-          return res.status(500).json({ message: "Failed to create temporary file", error: err.message });
+          return res.status(500).json({
+            message: "Failed to create temporary file",
+            error: err.message
+          });
         }
 
         // Écrire le buffer dans le fichier temporaire
         fs.writeFile(tempFilePath, buffer, (err) => {
           if (err) {
-            return res.status(500).json({ message: "Failed to write buffer to temp file", error: err.message });
+            return res.status(500).json({
+              message: "Failed to write buffer to temp file",
+              error: err.message
+            });
           }
 
           // Créer le répertoire de sortie s'il n'existe pas
@@ -58,14 +63,14 @@ module.exports = {
             .input(tempFilePath) // Utiliser le fichier temporaire
             .toFormat(format) // Le format de sortie choisi par l'utilisateur
             .output(outputFilePath)
-            .on("end", function() {
+            .on("end", function () {
               console.log("Audio conversion finished");
               res.status(200).json({
                 message: "Audio uploaded, converted, and saved successfully",
                 filePath: outputFilePath
               });
             })
-            .on("error", function(err) {
+            .on("error", function (err) {
               console.error(err);
               res.status(500).json({
                 message: "An error occurred during audio processing",
@@ -75,10 +80,11 @@ module.exports = {
             .run();
         });
       });
-
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "An error occurred", error: error.message });
+      res
+        .status(500)
+        .json({ message: "An error occurred", error: error.message });
     }
   },
 
@@ -105,8 +111,8 @@ module.exports = {
       }
 
       const audios = await Audio.find()
-        .populate("artist", "name")
-        .populate("album", "title");
+        .populate("artist", "name imageUrl")
+        .populate("album", "title coverUrl");
 
       await config.redis.set("audios:all", JSON.stringify(audios), {
         EX: 3600
@@ -124,8 +130,8 @@ module.exports = {
   getAudioById: async (req, res) => {
     try {
       const audio = await Audio.findById(req.params.id)
-        .populate("artist", "name")
-        .populate("album", "title");
+        .populate("artist", "name imageUrl")
+        .populate("album", "title coverUrl");
 
       const cacheKey = `audios:${req.params.id}`;
       const cachedAudio = await config.redis.get(cacheKey);
