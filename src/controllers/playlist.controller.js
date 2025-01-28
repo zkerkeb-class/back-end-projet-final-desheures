@@ -3,7 +3,12 @@ const config = require("../config");
 module.exports = {
   createPlaylist: async (req, res) => {
     try {
-      const playlist = new Playlist(req.body);
+      const { tracks = [] } = req.body;
+      const trackCount = tracks.length;
+      const playlist = new Playlist({
+        ...req.body,
+        trackCount
+      });
       const savedPlaylist = await playlist.save();
 
       await config.redis.del("playlists:all");
@@ -71,9 +76,13 @@ module.exports = {
 
   updatePlaylist: async (req, res) => {
     try {
+      const { tracks } = req.body;
       const updatedPlaylist = await Playlist.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        {
+          ...req.body,
+          ...(tracks && { trackCount: tracks.length })
+        },
         { new: true }
       ).populate("tracks", "title duration");
       if (!updatedPlaylist) {

@@ -37,7 +37,6 @@ const controller = {
       } = req.query;
       const skip = (page - 1) * limit;
 
-      // Si un genre est spécifié, trouvez le genre le plus proche
       let correctedGenre = null;
       if (genre) {
         correctedGenre = await controller.findClosestGenre(genre);
@@ -59,7 +58,6 @@ const controller = {
         }
       };
 
-      // Ajouter l'information de correction si nécessaire
       if (correctedGenre && correctedGenre !== genre) {
         results.correction = {
           original: genre,
@@ -68,19 +66,16 @@ const controller = {
         };
       }
 
-      // Recherche phonétique des artistes
       if (artist) {
         results.artists = await controller.searchArtistsPhonetically(artist);
       }
 
-      // Recherche par similarité
       if (similarTo) {
         results.tracks = await controller.findSimilarTracks(
           similarTo,
           SIMILARITY_WEIGHTS
         );
       } else {
-        // Recherche standard
         const searchQuery = await controller.buildSearchQuery({
           query,
           genre: correctedGenre || genre,
@@ -88,7 +83,6 @@ const controller = {
           lyrics
         });
 
-        // Exécution parallèle des requêtes
         const [artists, albums, tracks, playlists, total] = await Promise.all([
           Artist.find(searchQuery).skip(skip).limit(limit),
           Album.find(searchQuery).populate("artist").skip(skip).limit(limit),
@@ -107,7 +101,6 @@ const controller = {
         results.pagination.total = total;
       }
 
-      // Autocomplétion
       if (query) {
         results.autoComplete.suggestions =
           await controller.getAutocompleteSuggestions(query);
