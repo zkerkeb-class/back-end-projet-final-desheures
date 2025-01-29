@@ -54,7 +54,7 @@ const mongoose = require("mongoose");
  *         genres: ["Pop", "Rock"]
  *         coverUrl: "http://example.com/cover.jpg"
  *         tracks: ["64a7f8e5b1e2c0001a2d3e52", "64a7f8e5b1e2c0001a2d3e53"]
- *         trackCount: 12
+ *         trackCount: 2
  *         popularity: 85
  *         createdAt: "2024-11-21T12:34:56Z"
  */
@@ -97,6 +97,22 @@ const AlbumSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+AlbumSchema.pre("save", async function (next) {
+  if (this.isModified("tracks")) {
+    this.trackCount = this.tracks.length;
+  }
+  next();
+});
+
+AlbumSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+  if (update.tracks) {
+    const trackCount = update.tracks.length;
+    this.setUpdate({ ...update, trackCount });
+  }
+  next();
 });
 
 const Album = mongoose.model("Album", AlbumSchema);

@@ -4,7 +4,14 @@ const config = require("../config");
 module.exports = {
   createAlbum: async (req, res) => {
     try {
-      const album = new Album(req.body);
+      const { tracks = [] } = req.body;
+      const trackCount = tracks.length;
+
+      const album = new Album({
+        ...req.body,
+        trackCount
+      });
+
       const savedAlbum = await album.save();
 
       await config.redis.del("albums:all");
@@ -75,9 +82,17 @@ module.exports = {
   updateAlbum: async (req, res) => {
     try {
       const albumId = req.params.id;
-      const updatedAlbum = await Album.findByIdAndUpdate(albumId, req.body, {
-        new: true
-      })
+
+      const { tracks } = req.body;
+
+      const updatedAlbum = await Album.findByIdAndUpdate(
+        albumId,
+        {
+          ...req.body,
+          ...(tracks && { trackCount: tracks.length })
+        },
+        { new: true }
+      )
         .populate("artist")
         .populate("tracks");
 
