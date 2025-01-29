@@ -4,6 +4,24 @@ const Artist = require("../models/Artist");
 const Playlist = require("../models/Playlist");
 const config = require("../config");
 module.exports = {
+  getAllGenres: async (req, res) => {
+    try {
+      const albumGenres = await Album.distinct("genres");
+      const audioGenres = await Audio.distinct("genres");
+      const artistGenres = await Artist.distinct("genres");
+
+      const allGenres = Array.from(
+        new Set([...albumGenres, ...audioGenres, ...artistGenres])
+      );
+
+      res.status(200).json(allGenres);
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des genres",
+        error
+      });
+    }
+  },
   getAlbumsByArtist: async (req, res) => {
     try {
       const { artistId } = req.params;
@@ -237,7 +255,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
       const tracks = await Audio.find({
-        createdAt: { $gte: startOfYear, $lte: endOfYear }
+        releaseDate: { $gte: startOfYear, $lte: endOfYear }
       });
 
       if (tracks.length === 0) {

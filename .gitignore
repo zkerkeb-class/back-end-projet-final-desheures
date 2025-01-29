@@ -2,3 +2,12 @@ node_modules/
 .env
 public/
 logs/
+/uploads/*
+!/uploads/audios/
+/uploads/audios/*
+!/uploads/audios/*.wav
+!/uploads/audios/*.m4a
+!/uploads/converted/
+converted/
+backups/
+temp/
