@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const Album = require("../../models/Album");
 const Audio = require("../../models/Audio");
 const Playlist = require("../../models/Playlist");
-// const seedArtists = require("./seedArtists");
 const config = require("../../config");
 const seedAudiosFromFiles = require("./seedingAudio");
 mongoose
@@ -13,9 +12,10 @@ mongoose
   })
 
   .catch((err) => {
-    config.logger.error(err);
+    config.logger.error("❌ Erreur lors de la connexion à MongoDB:", err);
     process.exit(1);
   });
+
 const seedDatabase = async () => {
   try {
     await Promise.all([
@@ -27,10 +27,10 @@ const seedDatabase = async () => {
 
     await seedAudiosFromFiles();
 
-    config.logger.info("Seeding terminé !");
+    config.logger.info("✅ Seeding terminé !");
     process.exit(0);
   } catch (error) {
-    config.logger.error("Erreur lors du seeding:", error);
+    config.logger.error("❌ Erreur lors du seeding:", error);
     process.exit(1);
   }
 };

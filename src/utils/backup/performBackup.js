@@ -14,32 +14,20 @@ const performBackup = async () => {
   const backupResults = { success: true, errors: [] };
 
   try {
-    config.logger.info("Début du processus de backup...");
     ensureDirectoriesExist();
 
-    // 1. Backup MongoDB
-    config.logger.info("Création du backup MongoDB...");
     const mongoBackupPath = await backupMongoDB(timestamp);
 
-    // 2. Test de restauration
-    config.logger.info("Test de restauration MongoDB...");
     await testRestore(mongoBackupPath);
 
-    // 3. Déplacement du backup MongoDB
-    config.logger.info("Déplacement du backup MongoDB vers le stockage...");
     await moveToStorage(mongoBackupPath, timestamp, "mongodb");
 
-    // 4. Archivage des fichiers média
-    config.logger.info("Archivage des fichiers média...");
     const mediaArchivePath = await archiveMediaFiles(timestamp);
     await moveToStorage(mediaArchivePath, timestamp, "media");
 
-    // 5. Nettoyage
-    config.logger.info("Nettoyage des anciens backups...");
     cleanupOldBackups();
     cleanupTempFiles();
 
-    // 6. Notification de succès
     config.logger.info("Backup terminé avec succès.");
     await sendNotification(
       "Backup Réussi",
@@ -47,14 +35,14 @@ const performBackup = async () => {
       "success"
     );
   } catch (error) {
-    config.logger.error("Erreur lors du processus de backup :", error);
+    config.logger.error("❌ Erreur lors du processus de backup :", error);
     backupResults.success = false;
     backupResults.errors.push(error.message);
 
     await sendNotification(
-      "Erreur de Backup",
+      "❌ Erreur de Backup",
       `Une erreur est survenue lors du backup : ${error.message}`,
-      "high"
+      "5"
     );
   }
 

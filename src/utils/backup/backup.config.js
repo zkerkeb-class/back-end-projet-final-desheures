@@ -1,7 +1,6 @@
 const path = require("path");
-
+const config = require("../../config");
 module.exports = {
-  // Chemins des dossiers
   paths: {
     backup: path.join(__dirname, "../../../backups"),
     temp: path.join(__dirname, "../../../temp"),
@@ -10,28 +9,21 @@ module.exports = {
     }
   },
 
-  // Configuration des notifications
   notification: {
     ntfyUrl: process.env.NTFY_URL || "https://ntfy.sh/backup_desheures_alert"
   },
 
-  // Politique de rétention des backups
   retention: {
-    daily: 7, // Nombre de jours à garder
-    weekly: 4 // Nombre de semaines à garder
+    daily: 7,
+    weekly: 4
   },
 
   mongodb: {
-    database:
-      process.env.MONGO_DB_NAME ||
-      "mongodb://admin:password123@localhost:28018/?authSource=admin",
-    testDatabase:
-      "mongodb://admin:password123@localhost:28018/?authSource=admin"
+    database: config.env.mongo_uri,
+    testDatabase: config.env.mongo_uri
   },
 
-  // Format des timestamps
   timeFormat: "YYYYMMDD_HHmmss",
 
-  // Format des dossiers de date
   folderFormat: "YYYY-MM"
 };

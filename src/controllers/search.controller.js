@@ -2,7 +2,7 @@ const Album = require("../models/Album");
 const Audio = require("../models/Audio");
 const Artist = require("../models/Artist");
 const Playlist = require("../models/Playlist");
-const config = require("../config");
+
 const {
   customMetaphone,
   customLevenshteinDistance
@@ -40,9 +40,6 @@ const controller = {
       let correctedGenre = null;
       if (genre) {
         correctedGenre = await controller.findClosestGenre(genre);
-        if (correctedGenre !== genre) {
-          config.logger.info(`Genre corrigé: ${genre} -> ${correctedGenre}`);
-        }
       }
 
       const results = {
@@ -108,7 +105,6 @@ const controller = {
 
       res.status(200).json(results);
     } catch (error) {
-      config.logger.error(`Erreur lors de la recherche: ${error.message}`);
       res.status(500).json({
         message: "Une erreur est survenue lors de la recherche.",
         error: error.message
@@ -257,7 +253,6 @@ const controller = {
   },
 
   getAvailableGenres: async () => {
-    // Vérifier si le cache est valide (moins d'une heure)
     if (
       genresCache.genres &&
       genresCache.timestamp &&
@@ -266,19 +261,16 @@ const controller = {
       return genresCache.genres;
     }
 
-    // Récupérer tous les genres uniques de la base de données
     const [albumGenres, audioGenres, artistGenres] = await Promise.all([
       Album.distinct("genres"),
       Audio.distinct("genres"),
       Artist.distinct("genres")
     ]);
 
-    // Créer un ensemble unique de genres
     const allGenres = Array.from(
       new Set([...albumGenres, ...audioGenres, ...artistGenres])
     );
 
-    // Mettre à jour le cache
     genresCache.genres = allGenres;
     genresCache.timestamp = Date.now();
 

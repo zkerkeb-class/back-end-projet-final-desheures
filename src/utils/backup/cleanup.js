@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
-const config = require("../../config");
 const backupConfig = require("./backup.config");
 
 const cleanupOldBackups = () => {
@@ -14,7 +13,6 @@ const cleanupOldBackups = () => {
       const folderDate = moment(folder, backupConfig.folderFormat);
       if (folderDate.isValid() && folderDate.isBefore(expirationDate)) {
         fs.rmSync(folderPath, { recursive: true, force: true });
-        config.logger.info(`Ancien répertoire supprimé: ${folderPath}`);
       }
     }
   });
@@ -23,7 +21,6 @@ const cleanupOldBackups = () => {
 const cleanupTempFiles = () => {
   const tempPath = backupConfig.paths.temp;
   fs.rmSync(tempPath, { recursive: true, force: true });
-  config.logger.info("Tous les fichiers temporaires ont été supprimés");
 };
 
 module.exports = { cleanupOldBackups, cleanupTempFiles };

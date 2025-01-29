@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
-const config = require("../../config");
 const backupConfig = require("./backup.config");
 
 const getAllFiles = (dirPath, arrayOfFiles = []) => {
@@ -24,9 +23,6 @@ const moveToStorage = async (filePath, timestamp, type) => {
   );
   const destinationDir = path.join(backupConfig.paths.backup, type, dateFolder);
   const destinationPath = path.join(destinationDir, fileName);
-
-  config.logger.info(`Déplacement de ${filePath} vers ${destinationPath}`);
-
   try {
     if (!fs.existsSync(destinationDir)) {
       fs.mkdirSync(destinationDir, { recursive: true });

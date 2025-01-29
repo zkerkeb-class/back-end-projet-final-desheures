@@ -1,14 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 const archiver = require("archiver");
-const config = require("../../config");
 const { getAllFiles } = require("./fileUtils");
 const backupConfig = require("./backup.config");
 
 const archiveMediaFiles = async (timestamp) => {
   const archiveName = `media_backup_${timestamp}.zip`;
   const archivePath = path.join(backupConfig.paths.temp, archiveName);
-  config.logger.info(`Création de l'archive média: ${archivePath}`);
 
   try {
     const output = fs.createWriteStream(archivePath);

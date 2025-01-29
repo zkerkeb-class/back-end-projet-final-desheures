@@ -34,9 +34,9 @@ config.redis;
 
 app.listen(config.env.port, () => {
   config.logger.info(
-    `Server is running on http://localhost:${config.env.port}`
+    `✅ Server is running on http://localhost:${config.env.port}`
   );
   config.logger.info(
-    `Swagger Docs available at http://localhost:${config.env.port}/api-docs`
+    `✅ Swagger Docs available at http://localhost:${config.env.port}/api-docs`
   );
 });

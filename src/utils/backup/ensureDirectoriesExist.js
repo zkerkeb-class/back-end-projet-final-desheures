@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const config = require("../../config");
 const backupConfig = require("./backup.config");
 
 const ensureDirectoriesExist = () => {
@@ -12,7 +11,6 @@ const ensureDirectoriesExist = () => {
   ];
   directories.forEach((dir) => {
     if (!fs.existsSync(dir)) {
-      config.logger.info(`Création du répertoire: ${dir}`);
       fs.mkdirSync(dir, { recursive: true });
     }
   });

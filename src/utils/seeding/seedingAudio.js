@@ -36,7 +36,6 @@ const GENRES = [
   "Folk"
 ];
 
-// Création des dossiers nécessaires
 [imageDirectory, wavDirectory].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -45,6 +44,7 @@ const GENRES = [
 
 mongoose
   .connect(config.env.mongo_uri, {
+    dbName: "admin",
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
@@ -117,20 +117,17 @@ const convertAndSaveImage = async (imageBuffer) => {
       return relativeImagePath;
     }
 
-    // Convert and save new image
     await sharp(imageBuffer).webp({ quality: 80 }).toFile(imagePath);
-    config.logger.info("Nouvelle image convertie et sauvegardée");
 
     return relativeImagePath;
   } catch (error) {
-    config.logger.error("Erreur lors de la conversion de l'image:", error);
+    config.logger.error("❌ Erreur lors de la conversion de l'image:", error);
     return null;
   }
 };
 
 const getImageUrlForEntity = async (imageBuffer, name, type) => {
   try {
-    // Check if entity already has an image
     const existingImageUrl = await getExistingImageUrl(name, type);
     if (
       existingImageUrl &&
@@ -140,14 +137,13 @@ const getImageUrlForEntity = async (imageBuffer, name, type) => {
       return existingImageUrl;
     }
 
-    // Convert and save image if provided, otherwise return default
     const savedImageUrl = await convertAndSaveImage(imageBuffer);
     return (
       savedImageUrl || (type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE)
     );
   } catch (error) {
     config.logger.error(
-      ` Erreur lors du traitement de l'image pour ${type} ${name}:`,
+      `❌ Erreur lors du traitement de l'image pour ${type} ${name}:`,
       error
     );
     return type === "album" ? DEFAULT_COVER : DEFAULT_ARTIST_IMAGE;
@@ -183,7 +179,6 @@ const createOrUpdateArtist = async (artistName, tags) => {
       imageUrl
     });
     await artist.save();
-    config.logger.info(`Nouvel artiste créé: ${artistName}`);
   } else if (
     tags.image?.imageBuffer &&
     artist.imageUrl === DEFAULT_ARTIST_IMAGE
@@ -194,7 +189,6 @@ const createOrUpdateArtist = async (artistName, tags) => {
       "artist"
     );
     await artist.save();
-    config.logger.info(`Image mise à jour pour l'artiste: ${artistName}`);
   }
 
   return artist;
@@ -241,29 +235,18 @@ const createOrUpdateAlbum = async (albumName, artist, tags) => {
       artist.albums.push(album._id);
       artist.genres = [...new Set([...artist.genres, ...albumGenres])];
       await artist.save();
-      config.logger.info(
-        `Album ${albumName} ajouté à l'artiste ${artist.name}`
-      );
     }
-
-    config.logger.info(`Nouvel album créé: ${albumName}`);
   } else {
-    // Met à jour l'image si nécessaire
     if (tags.image?.imageBuffer && album.coverUrl === DEFAULT_COVER) {
       album.coverUrl = await getImageUrlForEntity(
         tags.image?.imageBuffer,
         albumName,
         "album"
       );
-      config.logger.info(`Image mise à jour pour l'album: ${albumName}`);
     }
 
-    // Synchronise trackCount avec le nombre de pistes
     if (album.tracks.length !== album.trackCount) {
       album.trackCount = album.tracks.length;
-      config.logger.info(
-        `trackCount mis à jour pour l'album: ${albumName} (${album.trackCount} tracks)`
-      );
     }
 
     await album.save();
@@ -277,20 +260,18 @@ const seedAudiosFromFiles = async () => {
     const files = fs
       .readdirSync(audioDirectory)
       .filter((file) => file.endsWith(".mp3"));
-    config.logger.info(`Début du traitement de ${files.length} fichiers`);
 
     for (const file of files) {
       const mp3FilePath = path.join(audioDirectory, file);
       const wavFileName = path.basename(file, ".mp3") + ".wav";
       const wavFilePath = path.join(wavDirectory, wavFileName);
 
-      // Convertir en WAV si pas déjà fait
       if (!fs.existsSync(wavFilePath)) {
         try {
           await convertToWav(mp3FilePath, wavFilePath);
         } catch (error) {
           config.logger.error(
-            `Erreur lors de la conversion de ${file}:`,
+            `❌ Erreur lors de la conversion de ${file}:`,
             error
           );
           continue;
@@ -339,16 +320,12 @@ const seedAudiosFromFiles = async () => {
           album.tracks.push(audio._id);
           await album.save();
         }
-
-        config.logger.info(
-          `Audio "${finalTrackName}" ajouté ${album ? ` "  à l'album "${finalAlbumName}"` : ""} de ${finalArtistName}`
-        );
       }
     }
 
-    config.logger.info("Seeding des audios terminé avec succès !");
+    config.logger.info("✅ Seeding des audios terminé avec succès !");
   } catch (error) {
-    config.logger.error("Erreur lors du seeding:", error);
+    config.logger.error("❌ Erreur lors du seeding:", error);
   } finally {
     mongoose.connection.close();
   }
