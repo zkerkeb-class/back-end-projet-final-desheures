@@ -9,6 +9,8 @@ const imageRoute = require("./image.route");
 
 const filterRoute = require("./filter.route");
 
+const sortRoute = require("./sort.route");
+const searchRoute = require("./search.route");
 const router = express.Router();
 
 router.use("/auth", authRoute);
@@ -18,4 +20,6 @@ router.use("/image", imageRoute);
 router.use("/album", albumRoute);
 router.use("/playlist", playlistRoute);
 router.use("/filter", filterRoute);
+router.use("/sort", sortRoute);
+router.use("/search", searchRoute);
 module.exports = router;

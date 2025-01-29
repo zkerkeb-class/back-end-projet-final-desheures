@@ -9,3 +9,5 @@ logs/
 !/uploads/audios/*.m4a
 !/uploads/converted/
 converted/
+backups/
+temp/

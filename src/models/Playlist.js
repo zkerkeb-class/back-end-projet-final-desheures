@@ -89,6 +89,22 @@ const PlaylistSchema = new mongoose.Schema({
   }
 });
 
+PlaylistSchema.pre("save", async function (next) {
+  if (this.isModified("tracks")) {
+    this.trackCount = this.tracks.length;
+  }
+  next();
+});
+
+PlaylistSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+  if (update.tracks) {
+    const trackCount = update.tracks.length;
+    this.setUpdate({ ...update, trackCount });
+  }
+  next();
+});
+
 const Playlist = mongoose.model("Playlist", PlaylistSchema);
 
 module.exports = Playlist;

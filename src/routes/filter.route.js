@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const filterController = require("../controllers/filter.controller");
 
+router.get("/genres", filterController.getAllGenres);
 router.get("/artists/genre/:genre", filterController.getArtistsByGenre);
 
 router.get("/albums/artist/:artistId", filterController.getAlbumsByArtist);
