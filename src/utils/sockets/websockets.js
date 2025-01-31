@@ -12,8 +12,6 @@ const configureWebSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`Client connected: ${socket.id}`);
-
     let sessionId = socket.handshake.query.sessionId;
     if (!sessionId) {
       sessionId = socket.id;
@@ -21,7 +19,6 @@ const configureWebSocket = (server) => {
 
     socket.on("playTrack", async (trackId) => {
       try {
-        console.log(`Playing track: ${trackId}`);
         // Mettre à jour les deux types de playlists
         await playlistSocketController.updatePlaylistByType(
           trackId,
@@ -65,9 +62,7 @@ const configureWebSocket = (server) => {
       }
     });
 
-    socket.on("disconnect", () => {
-      console.log(`Client disconnected: ${socket.id}`);
-    });
+    socket.on("disconnect", () => {});
   });
 
   return io;
