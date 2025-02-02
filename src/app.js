@@ -11,6 +11,10 @@ const app = express();
 const server = http.createServer(app);
 
 // Configuration des middlewares
+
+app.use(middlewares.metrics.middleware);
+app.use(middlewares.metrics.router);
+
 app.use(express.json());
 app.use(...middlewares.bodyParser);
 app.use(
@@ -27,6 +31,7 @@ app.use("*", middlewares.corsOptions);
 app.use(middlewares.helmet);
 
 // Routes
+
 app.get("/", (req, res) => {
   res.send({ message: "Welcome to DesHeures API Application" });
 });

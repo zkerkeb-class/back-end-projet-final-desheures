@@ -3,5 +3,6 @@ module.exports = {
   bodyParser: require("./bodyParser"),
   helmet: require("./helmet"),
   rateLimiter: require("./rateLimiter"),
-  isAuth: require("./isAuth")
+  isAuth: require("./isAuth"),
+  metrics: require("./metrics")
 };
