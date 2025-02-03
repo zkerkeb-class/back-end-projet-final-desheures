@@ -30,7 +30,7 @@ jest.mock("../middlewares", () => mockMiddlewares);
 
 const mockConfig = {
   swaggerSpec: {},
-  env: { port: 3000 },
+  env: { port: 3030 },
   logger: {
     info: jest.fn(),
     error: jest.fn()

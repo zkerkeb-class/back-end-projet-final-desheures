@@ -11,6 +11,7 @@
     "prod:stop": "pm2 stop my-app",
     "prod:delete": "pm2 delete my-app",
     "start": "node src/app.js",
+    "seed": "node src/utils/seeding/faker.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "jest",
