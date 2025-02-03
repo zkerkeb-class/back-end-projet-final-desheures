@@ -1,7 +1,103 @@
 const Playlist = require("../models/Playlist");
 const config = require("../config");
 
+const playlistSocketController = {
+  getPlaylistByType: async (sessionId, playlistType) => {
+    try {
+      const playlist = await Playlist.findOne({
+        sessionId,
+        playlistType
+      }).populate("tracks", "title duration imageUrl albumCoverUrl");
+
+      if (!playlist) {
+        const defaultName =
+          playlistType === "recentlyPlayed"
+            ? "Dernières écoutes"
+            : "Les plus écoutés";
+        const newPlaylist = new Playlist({
+          name: defaultName,
+          sessionId,
+          playlistType,
+          tracks: []
+        });
+        await newPlaylist.save();
+        return [];
+      }
+
+      if (playlistType === "mostPlayed") {
+        return playlist.tracks.map((track) => ({
+          ...track.toObject(),
+          playCount: playlist.trackPlayCounts.get(track._id.toString()) || 0
+        }));
+      }
+
+      return playlist.tracks;
+    } catch (error) {
+      config.logger.error("Erreur getPlaylistByType:", error);
+      throw error;
+    }
+  },
+
+  updatePlaylistByType: async (trackId, sessionId, playlistType) => {
+    try {
+      let playlist = await Playlist.findOne({
+        sessionId,
+        playlistType
+      });
+
+      if (!playlist) {
+        const defaultName =
+          playlistType === "recentlyPlayed"
+            ? "Dernières écoutes"
+            : "Les plus écoutés";
+        playlist = new Playlist({
+          name: defaultName,
+          sessionId,
+          playlistType,
+          tracks: [],
+          trackPlayCounts: new Map()
+        });
+      }
+
+      if (playlistType === "recentlyPlayed") {
+        playlist.tracks = playlist.tracks.filter(
+          (id) => id.toString() !== trackId.toString()
+        );
+        playlist.tracks.unshift(trackId);
+        playlist.tracks = playlist.tracks.slice(0, 20);
+      } else if (playlistType === "mostPlayed") {
+        const counts = playlist.trackPlayCounts || new Map();
+
+        const currentCount = (counts.get(trackId.toString()) || 0) + 1;
+        counts.set(trackId.toString(), currentCount);
+        playlist.trackPlayCounts = counts;
+
+        if (!playlist.tracks.includes(trackId)) {
+          playlist.tracks.push(trackId);
+        }
+
+        playlist.tracks.sort((a, b) => {
+          const countA = counts.get(a.toString()) || 0;
+          const countB = counts.get(b.toString()) || 0;
+          return countB - countA;
+        });
+
+        playlist.tracks = playlist.tracks.slice(0, 20);
+        playlist.playCount += 1;
+      }
+
+      playlist.lastPlayed = new Date();
+      await playlist.save();
+      return playlist;
+    } catch (error) {
+      config.logger.error("Erreur updatePlaylistByType:", error);
+      throw error;
+    }
+  }
+};
+
 module.exports = {
+  playlistSocketController,
   createPlaylist: async (req, res) => {
     try {
       const { tracks = [] } = req.body;

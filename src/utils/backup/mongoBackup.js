@@ -20,10 +20,6 @@ const backupMongoDB = async (timestamp) => {
     // eslint-disable-next-line no-unused-vars
     const { stdout, stderr } = await execAsync(dumpCommand);
 
-    if (stderr) {
-      console.log("stderr:", stderr);
-    }
-
     if (!fs.existsSync(backupPath)) {
       throw new Error("Le dossier de backup n'existe pas");
     }
@@ -95,11 +91,8 @@ const testRestore = async (mongoBackupPath) => {
     }
 
     const restoreCommand = `mongorestore --uri="${config.env.mongo_uri}" --nsFrom="admin.*" --nsTo="admin_backup.*" "${dumpDir}"`;
-    const { stderr } = await execAsync(restoreCommand);
-
-    if (stderr) {
-      console.log("Erreurs mongorestore:", stderr);
-    }
+    // eslint-disable-next-line no-unused-vars
+    const { stdout, stderr } = await execAsync(restoreCommand);
 
     fs.rmSync(extractPath, { recursive: true, force: true });
     return true;

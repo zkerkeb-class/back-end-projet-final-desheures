@@ -13,11 +13,11 @@ const playlistController = require("../controllers/playlist.controller");
  * @swagger
  * /api/playlist:
  *   get:
- *     summary: Récupérer toutes les playlist
+ *     summary: Récupérer toutes les playlists
  *     tags: [Playlist]
  *     responses:
  *       200:
- *         description: Liste des playlist récupérée avec succès.
+ *         description: Liste des playlists récupérée avec succès.
  *         content:
  *           application/json:
  *             schema:
@@ -172,6 +172,7 @@ const playlistController = require("../controllers/playlist.controller");
  *       400:
  *         description: Données invalides.
  */
+
 /**
  * @swagger
  * /api/playlist/{id}:
@@ -194,6 +195,44 @@ const playlistController = require("../controllers/playlist.controller");
  *         description: Erreur serveur.
  */
 
+/**
+ * @swagger
+ * /api/playlist/recently-played:
+ *   get:
+ *     summary: Récupérer la playlist des pistes récemment écoutées
+ *     tags: [Playlist]
+ *     responses:
+ *       200:
+ *         description: Playlist des pistes récemment écoutées récupérée avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/RecentlyPlayed'
+ *       500:
+ *         description: Erreur serveur.
+ */
+
+/**
+ * @swagger
+ * /api/playlist/most-played:
+ *   get:
+ *     summary: Récupérer la playlist des pistes les plus écoutées
+ *     tags: [Playlist]
+ *     responses:
+ *       200:
+ *         description: Playlist des pistes les plus écoutées récupérée avec succès.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/MostPlayed'
+ *       500:
+ *         description: Erreur serveur.
+ */
+
 router.get("/", playlistController.getAllPlaylists);
 router.get("/:id", playlistController.getPlaylistById);
 router.post("/", playlistController.createPlaylist);
@@ -201,5 +240,31 @@ router.put("/:id", playlistController.updatePlaylist);
 router.put("/:id/addTrack", playlistController.addTrackToPlaylist);
 router.put("/:id/removeTrack", playlistController.removeTrackFromPlaylist);
 router.delete("/:id", playlistController.deletePlaylist);
+router.get("/recently-played", async (req, res) => {
+  try {
+    const recentlyPlayedTracks =
+      await playlistController.getRecentlyPlayedPlaylist();
+    res.status(200).json(recentlyPlayedTracks);
+  } catch (error) {
+    res.status(500).json({
+      message:
+        "Erreur lors de la récupération de la playlist 'Dernières écoutes'",
+      error
+    });
+  }
+});
+
+router.get("/most-played", async (req, res) => {
+  try {
+    const mostPlayedTracks = await playlistController.getMostPlayedPlaylist();
+    res.status(200).json(mostPlayedTracks);
+  } catch (error) {
+    res.status(500).json({
+      message:
+        "Erreur lors de la récupération de la playlist 'Les plus écoutées'",
+      error
+    });
+  }
+});
 
 module.exports = router;
