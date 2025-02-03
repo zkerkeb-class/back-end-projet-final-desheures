@@ -126,6 +126,18 @@ PlaylistSchema.pre("findOneAndUpdate", async function (next) {
   next();
 });
 
+// Middleware pour calculer le temps d'exécution des requêtes
+PlaylistSchema.pre("find", function (next) {
+  this.start = Date.now(); // Début du chronométrage
+  next();
+});
+
+PlaylistSchema.post("find", function (docs, next) {
+  const executionTimeMs = Date.now() - this.start; // Fin du chronométrage
+  console.log(`Requête Mongoose 'find' exécutée en ${executionTimeMs} ms`);
+  next();
+});
+
 const Playlist = mongoose.model("Playlist", PlaylistSchema);
 
 module.exports = Playlist;

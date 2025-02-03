@@ -144,16 +144,17 @@ module.exports = {
 
   getPlaylistById: async (req, res) => {
     try {
-      const playlist = await Playlist.findById(req.params.id).populate(
-        "tracks",
-        "title duration"
-      );
-      const cacheKey = `playlists:${req.params.id}`;
 
+      const cacheKey = `playlists:${req.params.id}`;
       const cachedPlaylist = await config.redis.get(cacheKey);
       if (cachedPlaylist) {
         return res.status(200).json(JSON.parse(cachedPlaylist));
       }
+      const playlist = await Playlist.findById(req.params.id).populate(
+        "tracks",
+        "title duration"
+      );
+
       if (!playlist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }

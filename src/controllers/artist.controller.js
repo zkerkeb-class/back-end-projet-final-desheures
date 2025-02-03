@@ -36,13 +36,15 @@ module.exports = {
   },
   getArtistById: async (req, res) => {
     try {
-      const artist = await Artist.findById(req.params.id);
+
       const cacheKey = `artists:${req.params.id}`;
 
       const cachedArtists = await config.redis.get(cacheKey);
       if (cachedArtists) {
         return res.status(200).json(JSON.parse(cachedArtists));
       }
+
+      const artist = await Artist.findById(req.params.id);
 
       if (!artist) {
         return res.status(404).json({ message: "Artiste non trouvé" });

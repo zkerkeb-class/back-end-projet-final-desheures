@@ -114,6 +114,18 @@ const AudioSchema = new mongoose.Schema({
   }
 });
 
+// Middleware pour calculer le temps d'exécution des requêtes
+AudioSchema.pre("find", function (next) {
+  this.start = Date.now(); // Début du chronométrage
+  next();
+});
+
+AudioSchema.post("find", function (docs, next) {
+  const executionTimeMs = Date.now() - this.start; // Fin du chronométrage
+  console.log(`Requête Mongoose 'find' exécutée en ${executionTimeMs} ms`);
+  next();
+});
+
 const Audio = mongoose.model("Audio", AudioSchema);
 
 module.exports = Audio;

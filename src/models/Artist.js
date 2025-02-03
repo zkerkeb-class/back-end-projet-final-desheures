@@ -110,6 +110,18 @@ const ArtistSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Middleware pour calculer le temps d'exécution des requêtes
+ArtistSchema.pre("find", function (next) {
+  this.start = Date.now(); // Début du chronométrage
+  next();
+});
+
+ArtistSchema.post("find", function (docs, next) {
+  const executionTimeMs = Date.now() - this.start; // Fin du chronométrage
+  console.log(`Requête Mongoose 'find' exécutée en ${executionTimeMs} ms`);
+  next();
+});
+
 const Artist = mongoose.model("Artist", ArtistSchema);
 
 module.exports = Artist;

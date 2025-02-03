@@ -1,69 +1,26 @@
-const promClient = require("prom-client");
-const express = require("express");
 
-// Create a Registry
-const register = new promClient.Registry();
-
-// Enable default metrics
-promClient.collectDefaultMetrics({
-  register,
-  prefix: "desheures_"
-});
-
-// HTTP metrics
-const httpRequestDurationMicroseconds = new promClient.Histogram({
-  name: "http_request_duration_seconds",
-  help: "Duration of HTTP requests in seconds",
-  labelNames: ["method", "route", "status_code"],
-  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
-});
-
-const httpRequestCounter = new promClient.Counter({
-  name: "http_requests_total",
-  help: "Total number of HTTP requests",
-  labelNames: ["method", "route", "status_code"]
-});
-
-register.registerMetric(httpRequestDurationMicroseconds);
-register.registerMetric(httpRequestCounter);
-
-// Middleware function
-const metrics = (req, res, next) => {
-  if (req.path === "/metrics") {
-    next();
-    return;
-  }
-
-  const start = process.hrtime();
-
-  res.on("finish", () => {
-    const route = req.route ? req.route.path : req.path;
-    const statusCode = res.statusCode;
-    const duration = process.hrtime(start);
-    const durationInSeconds = duration[0] + duration[1] / 1e9;
-
-    httpRequestDurationMicroseconds
-      .labels(req.method, route, statusCode)
-      .observe(durationInSeconds);
-
-    httpRequestCounter.labels(req.method, route, statusCode).inc();
-  });
-
-  next();
-};
-
-// Metrics endpoint router
-const metricsRouter = express.Router();
-metricsRouter.get("/metrics", async (req, res) => {
-  try {
-    res.set("Content-Type", register.contentType);
-    res.end(await register.metrics());
-  } catch (error) {
-    res.status(500).end(error);
-  }
-});
+// const redisClient = require("../redisClient"); // Chemin vers votre fichier de configuration Redis
+// const { redisClient } = require("../config/redis");
+// const logger = require("../config/logger");
 
 module.exports = {
-  middleware: metrics,
-  router: metricsRouter
-};
+  APIReqestTime: async(req, res, next) => {
+    const start = Date.now();
+
+    res.on("finish", () => {
+      const duration = Date.now() - start; // Temps en millisecondes
+      // const metricKey = `metrics:${req.method}:${req.originalUrl}`;
+      console.log(`[METRICS] ${req.method} ${req.originalUrl} - ${duration}ms`);
+
+      // Enregistrer la durée de la requête dans Redis
+      // redisClient.lPush(metricKey, duration, (err) => {
+      //   if (err) {logger.error(`Erreur lors de l'enregistrement de la métrique: ${err}`);}
+      // });
+
+      // Définir une expiration pour les métriques enregistrées
+      // redisClient.expire(metricKey, 3600);
+    });
+
+    next();
+  }
+}
