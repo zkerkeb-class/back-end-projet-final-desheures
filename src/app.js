@@ -10,6 +10,13 @@ const { startScheduledBackups } = require("./utils/backup/backup.cron");
 const app = express();
 const server = http.createServer(app);
 
+// function testHusky() {
+//   const test = "pas de guillemets simples";
+//   var mauvaisVar = 123;
+//   console.log(test);
+//   return mauvaisVar;
+// }
+
 app.use(middlewares.metrics.middleware);
 app.use(middlewares.metrics.router);
 

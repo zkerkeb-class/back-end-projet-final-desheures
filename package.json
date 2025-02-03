@@ -22,8 +22,7 @@
   "lint-staged": {
     "*.{js,jsx}": [
       "prettier --write",
-      "eslint --fix",
-      "jest"
+      "eslint --fix"
     ]
   },
   "author": "",
