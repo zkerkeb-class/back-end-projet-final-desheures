@@ -1,7 +1,6 @@
 const Playlist = require("../models/Playlist");
 const config = require("../config");
 
-// Séparer les fonctions pour l'API REST et pour les sockets
 const playlistSocketController = {
   getPlaylistByType: async (sessionId, playlistType) => {
     try {
@@ -34,7 +33,7 @@ const playlistSocketController = {
 
       return playlist.tracks;
     } catch (error) {
-      console.error("Erreur getPlaylistByType:", error);
+      config.logger.error("Erreur getPlaylistByType:", error);
       throw error;
     }
   },
@@ -61,34 +60,28 @@ const playlistSocketController = {
       }
 
       if (playlistType === "recentlyPlayed") {
-        // La logique pour recentlyPlayed reste la même
         playlist.tracks = playlist.tracks.filter(
           (id) => id.toString() !== trackId.toString()
         );
         playlist.tracks.unshift(trackId);
         playlist.tracks = playlist.tracks.slice(0, 20);
       } else if (playlistType === "mostPlayed") {
-        // Convertir la Map en objet pour pouvoir le manipuler
         const counts = playlist.trackPlayCounts || new Map();
 
-        // Incrémenter le compteur pour ce track
         const currentCount = (counts.get(trackId.toString()) || 0) + 1;
         counts.set(trackId.toString(), currentCount);
         playlist.trackPlayCounts = counts;
 
-        // Si le track n'est pas dans la liste, l'ajouter
         if (!playlist.tracks.includes(trackId)) {
           playlist.tracks.push(trackId);
         }
 
-        // Trier les tracks par nombre d'écoutes
         playlist.tracks.sort((a, b) => {
           const countA = counts.get(a.toString()) || 0;
           const countB = counts.get(b.toString()) || 0;
-          return countB - countA; // Ordre décroissant
+          return countB - countA;
         });
 
-        // Garder les 20 plus écoutés
         playlist.tracks = playlist.tracks.slice(0, 20);
         playlist.playCount += 1;
       }
@@ -97,7 +90,7 @@ const playlistSocketController = {
       await playlist.save();
       return playlist;
     } catch (error) {
-      console.error("Erreur updatePlaylistByType:", error);
+      config.logger.error("Erreur updatePlaylistByType:", error);
       throw error;
     }
   }

@@ -10,8 +10,6 @@ const { startScheduledBackups } = require("./utils/backup/backup.cron");
 const app = express();
 const server = http.createServer(app);
 
-// Configuration des middlewares
-
 app.use(middlewares.metrics.middleware);
 app.use(middlewares.metrics.router);
 
@@ -30,15 +28,12 @@ app.use(
 app.use("*", middlewares.corsOptions);
 app.use(middlewares.helmet);
 
-// Routes
-
 app.get("/", (req, res) => {
   res.send({ message: "Welcome to DesHeures API Application" });
 });
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
 app.use("/api", require("./routes/index"));
 
-// Initialisation des services
 startScheduledBackups();
 config.connectToDatabase();
 config.clearCacheAndCreateData;

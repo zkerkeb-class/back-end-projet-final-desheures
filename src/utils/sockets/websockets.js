@@ -2,7 +2,7 @@ const { Server } = require("socket.io");
 const {
   playlistSocketController
 } = require("../../controllers/playlist.controller");
-
+const config = require("../../config");
 const configureWebSocket = (server) => {
   const io = new Server(server, {
     cors: {
@@ -34,7 +34,7 @@ const configureWebSocket = (server) => {
         socket.emit("recentlyPlayedUpdated");
         socket.emit("mostPlayedUpdated");
       } catch (error) {
-        console.error("Error handling playTrack event:", error);
+        config.logger.error("Error handling playTrack event:", error);
       }
     });
 
@@ -46,7 +46,7 @@ const configureWebSocket = (server) => {
         );
         socket.emit("recentlyPlayedTracks", tracks);
       } catch (error) {
-        console.error("Error getting recently played:", error);
+        config.logger.error("Error getting recently played:", error);
       }
     });
 
@@ -58,7 +58,7 @@ const configureWebSocket = (server) => {
         );
         socket.emit("mostPlayedTracks", tracks);
       } catch (error) {
-        console.error("Error getting most played:", error);
+        config.logger.error("Error getting most played:", error);
       }
     });
 
