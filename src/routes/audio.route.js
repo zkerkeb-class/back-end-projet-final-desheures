@@ -8,7 +8,6 @@ const multer = require("multer");
 router.use(express.json({ limit: "50mb" })); // Ajustez la limite si nécessaire
 router.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-
 /**
  * @swagger
  * tags:
@@ -162,7 +161,6 @@ router.get("/:id", audioController.getAudioById);
 router.post("/", middlewares.isAuth, audioController.createAudio);
 router.put("/:id", middlewares.isAuth, audioController.updateAudio);
 router.delete("/:id", middlewares.isAuth, audioController.deleteAudio);
-
 
 // Configurer Multer pour stocker le fichier en mémoire
 const upload = multer({ storage: multer.memoryStorage() });

@@ -22,9 +22,9 @@ const missingEnvVariables = requiredEnvVariables.filter(
 
 if (missingEnvVariables.length > 0) {
   logger.error(
-    `Environnement variables missing : ${missingEnvVariables.join(", ")}`
+    `❌ Environnement variables missing : ${missingEnvVariables.join(", ")}`
   );
-  throw new Error("API stopped because of missing variables");
+  throw new Error("❌ API stopped because of missing variables");
 }
 
 const env = {

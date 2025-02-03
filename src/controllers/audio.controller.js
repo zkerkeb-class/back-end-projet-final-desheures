@@ -10,8 +10,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const config = require("../config");
 
 module.exports = {
-
-  convertAudio: async(req, res) => {
+  convertAudio: async (req, res) => {
     try {
       const { buffer, originalname } = req.file;
       const { format } = req.body;
@@ -21,7 +20,6 @@ module.exports = {
           message: "No file uploaded"
         });
       }
-      // Vérifier si le format est spécifié
       if (!format || format.length === 0) {
         return res.status(400).json({
           message: "Format is required"
@@ -32,41 +30,41 @@ module.exports = {
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-      // Créer le nom de fichier de sortie
+
       const outputFileName = originalname.replace(/\.[^/.]+$/, `.${format}`);
       const outputFilePath = path.join(uploadDir, outputFileName);
 
-      // Créer un fichier temporaire pour le buffer audio
       tmp.file({ postfix: path.extname(originalname) }, (err, tempFilePath) => {
         if (err) {
-          return res.status(500).json({ message: "Failed to create temporary file", error: err.message });
+          return res.status(500).json({
+            message: "Failed to create temporary file",
+            error: err.message
+          });
         }
 
-        // Écrire le buffer dans le fichier temporaire
         fs.writeFile(tempFilePath, buffer, (err) => {
           if (err) {
-            return res.status(500).json({ message: "Failed to write buffer to temp file", error: err.message });
+            return res.status(500).json({
+              message: "Failed to write buffer to temp file",
+              error: err.message
+            });
           }
 
-          // Créer le répertoire de sortie s'il n'existe pas
           if (!fs.existsSync("uploads")) {
             fs.mkdirSync("uploads", { recursive: true });
           }
 
-          // Utiliser FFmpeg pour convertir l'audio
           ffmpeg()
-            .input(tempFilePath) // Utiliser le fichier temporaire
-            .toFormat(format) // Le format de sortie choisi par l'utilisateur
+            .input(tempFilePath)
+            .toFormat(format)
             .output(outputFilePath)
-            .on("end", function() {
-              console.log("Audio conversion finished");
+            .on("end", function () {
               res.status(200).json({
                 message: "Audio uploaded, converted, and saved successfully",
                 filePath: outputFilePath
               });
             })
-            .on("error", function(err) {
-              console.error(err);
+            .on("error", function (err) {
               res.status(500).json({
                 message: "An error occurred during audio processing",
                 error: err.message
@@ -75,10 +73,10 @@ module.exports = {
             .run();
         });
       });
-
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "An error occurred", error: error.message });
+      res
+        .status(500)
+        .json({ message: "An error occurred", error: error.message });
     }
   },
 
@@ -105,8 +103,8 @@ module.exports = {
       }
 
       const audios = await Audio.find()
-        .populate("artist", "name")
-        .populate("album", "title");
+        .populate("artist", "name imageUrl")
+        .populate("album", "title coverUrl");
 
       await config.redis.set("audios:all", JSON.stringify(audios), {
         EX: 3600
@@ -124,8 +122,8 @@ module.exports = {
   getAudioById: async (req, res) => {
     try {
       const audio = await Audio.findById(req.params.id)
-        .populate("artist", "name")
-        .populate("album", "title");
+        .populate("artist", "name imageUrl")
+        .populate("album", "title coverUrl");
 
       const cacheKey = `audios:${req.params.id}`;
       const cachedAudio = await config.redis.get(cacheKey);

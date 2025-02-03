@@ -86,7 +86,44 @@ const PlaylistSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  // Nouveaux champs
+  playlistType: {
+    type: String,
+    enum: ["normal", "recentlyPlayed", "mostPlayed"],
+    default: "normal"
+  },
+  sessionId: {
+    type: String // Pour stocker l'ID de session
+  },
+  lastPlayed: {
+    type: Date,
+    default: Date.now
+  },
+  playCount: {
+    type: Number,
+    default: 0
+  },
+  trackPlayCounts: {
+    type: Map,
+    of: Number,
+    default: new Map()
   }
+});
+PlaylistSchema.pre("save", async function (next) {
+  if (this.isModified("tracks")) {
+    this.trackCount = this.tracks.length;
+  }
+  next();
+});
+
+PlaylistSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+  if (update.tracks) {
+    const trackCount = update.tracks.length;
+    this.setUpdate({ ...update, trackCount });
+  }
+  next();
 });
 
 // Middleware pour calculer le temps d'exécution des requêtes
