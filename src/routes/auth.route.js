@@ -60,6 +60,15 @@ const authController = require("../controllers/auth.controller");
  *                   type: string
  *                   example: Seul le super utilisateur peut se connecter.
  */
+
+// Route pour la connexion de l'utilisateur
 router.post("/login", authController.login);
+
+// Route pour la déconnexion de l'utilisateur
+router.post("/logout", authController.logout);
+
+// Route pour obtenir les informations de l'utilisateur actuellement connecté
+router.get("/me", authController.getCurrentUser);
+
 
 module.exports = router;

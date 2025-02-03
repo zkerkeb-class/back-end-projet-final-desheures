@@ -39,7 +39,8 @@ const env = {
   mongo_uri: process.env.MONGO_URI,
   redis_host: process.env.REDIS_HOST,
   redis_port: process.env.REDIS_PORT,
-  redis_password: process.env.REDIS_PASSWORD
+  redis_password: process.env.REDIS_PASSWORD,
+  session_secret: process.env.SESSION_SECRET
 };
 
 module.exports = env;

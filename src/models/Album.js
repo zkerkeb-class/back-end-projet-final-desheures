@@ -99,6 +99,18 @@ const AlbumSchema = new mongoose.Schema({
   }
 });
 
+// Middleware pour calculer le temps d'exécution des requêtes
+AlbumSchema.pre("find", function (next) {
+  this.start = Date.now(); // Début du chronométrage
+  next();
+});
+
+AlbumSchema.post("find", function (docs, next) {
+  const executionTimeMs = Date.now() - this.start; // Fin du chronométrage
+  console.log(`Requête Mongoose 'find' exécutée en ${executionTimeMs} ms`);
+  next();
+});
+
 const Album = mongoose.model("Album", AlbumSchema);
 
 module.exports = Album;

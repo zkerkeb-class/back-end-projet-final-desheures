@@ -4,10 +4,9 @@ const artistRoute = require("./artist.route");
 const audioRoute = require("./audio.route");
 const albumRoute = require("./album.route");
 const playlistRoute = require("./playlist.route");
-
 const imageRoute = require("./image.route");
-
 const filterRoute = require("./filter.route");
+const metricsRoute = require("./metrics.route");
 
 const router = express.Router();
 
@@ -18,4 +17,5 @@ router.use("/image", imageRoute);
 router.use("/album", albumRoute);
 router.use("/playlist", playlistRoute);
 router.use("/filter", filterRoute);
+router.use("/metrics", metricsRoute);
 module.exports = router;

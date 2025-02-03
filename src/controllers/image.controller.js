@@ -12,10 +12,6 @@ module.exports = {
       const { buffer, originalname } = req.file;
       const { format, width, height } = req.body;
 
-      console.log(req.file);
-
-      console.log(req.body);
-
       // Vérifier si un fichier est fourni
       if (!buffer) {
         return res.status(400).json({
