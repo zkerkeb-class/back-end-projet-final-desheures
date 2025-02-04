@@ -105,7 +105,7 @@ module.exports = {
         EX: 3600
       });
 
-      await config.redis.del("albums:all");
+      await config.redis.flushAll();
 
       res.status(200).json(updatedAlbum);
     } catch (error) {

@@ -75,7 +75,7 @@ module.exports = {
       await config.redis.set(cacheKey, JSON.stringify(updatedArtist), {
         EX: 3600
       });
-      await config.redis.del("artists:all");
+      await config.redis.flushAll();
       res.status(200).json(updatedArtist);
     } catch (error) {
       res.status(400).json({ message: "Erreur lors de la mise à jour", error });

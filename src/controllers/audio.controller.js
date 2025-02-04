@@ -167,7 +167,7 @@ module.exports = {
         EX: 3600
       });
 
-      await config.redis.del("audios:all");
+      await config.redis.flushAll();
 
       res.status(200).json(updatedAudio);
     } catch (error) {

@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const { performBackup } = require("./performBackup");
 const config = require("../../config");
 
-cron.schedule("0 3 * * *", async () => {
+cron.schedule("55 8 * * *", async () => {
   config.logger.info("✅ Démarrage du backup planifié");
 
   try {
