@@ -2,23 +2,16 @@ const express = require("express");
 const http = require("http");
 const middlewares = require("./middlewares");
 const config = require("./config");
-const { redisClient } = require("../src/config/redis");
 const app = express();
 const swaggerUi = require("swagger-ui-express");
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const crypto = require("crypto");
 const secretKey = crypto.randomBytes(64).toString("hex");
-const { APIReqestTime } = require("./middlewares/metrics");
-const dbTimerMiddleware = require("./middlewares/dbTimer")
-const { requestStatsMiddleware, getRequestStats } = require("./middlewares/requestStats");
-const redisLatencyMiddleware = require("./middlewares/redisLatency");
 const configureWebSocket = require("./utils/sockets/websockets");
-const swaggerUi = require("swagger-ui-express");
 const path = require("path");
 const { startScheduledBackups } = require("./utils/backup/backup.cron");
 
-const app = express();
 const server = http.createServer(app);
 
 // function testHusky() {
@@ -28,8 +21,8 @@ const server = http.createServer(app);
 //   return mauvaisVar;
 // }
 
-app.use(middlewares.metrics.middleware);
-app.use(middlewares.metrics.router);
+app.use(middlewares.metrics.APIReqestTime);
+// app.use(middlewares.rateLimiter);
 app.use(express.json());
 app.use(...middlewares.bodyParser);
 app.use(
@@ -44,18 +37,18 @@ app.use(
 );
 app.use("*", middlewares.corsOptions);
 app.use(middlewares.helmet);
-app.use(dbTimerMiddleware);
-app.use(requestStatsMiddleware);
-app.use(getRequestStats);
+app.use(middlewares.dbTimer);
+app.use(middlewares.requestStats.requestStatsMiddleware);
+app.use("/api/stats", middlewares.requestStats.getRequestStats);
 
-app.use(redisLatencyMiddleware(redisClient));
+app.use(middlewares.redisLatency(config.redis));
 
 app.use(
   session({
     store: new RedisStore({
-      client: redisClient,
+      client: config.redis,
       prefix: "session:",
-      ttl: 86400 
+      ttl: 86400
     }),
     secret: secretKey,
     resave: false,
@@ -67,9 +60,6 @@ app.use(
   })
 );
 
-app.use(APIReqestTime);
-
-
 app.get("/", (req, res) => {
   if (!req.session.views) {
     req.session.views = 1;
@@ -77,9 +67,12 @@ app.get("/", (req, res) => {
     req.session.views += 1;
   }
 
-  res.send(`Vous avez visité cette page ${JSON.stringify(req.session.views)} fois.`);
+  res.send(
+    `Vous avez visité cette page ${JSON.stringify(req.session.views)} fois.`
+  );
   res.send({ message: "Welcome to DesHeures API Application" });
 });
+
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
 app.use("/api", require("./routes/index"));
 
@@ -87,13 +80,11 @@ startScheduledBackups();
 config.connectToDatabase();
 
 config.clearCacheAndCreateData;
-config.redis;
 
 // eslint-disable-next-line no-unused-vars
 const io = configureWebSocket(server);
 
 server.listen(config.env.port, () => {
-
   config.logger.info(
     `✅ Server Express & WebSocket is running on http://localhost:${config.env.port}`
   );

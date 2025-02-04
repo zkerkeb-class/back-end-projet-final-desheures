@@ -41,7 +41,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
-    "express-metrics": "^1.1.0",
+    "express-metrics": "^0.5.2",
     "express-prometheus-middleware": "^1.2.0",
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.17.3",
@@ -70,6 +70,7 @@
     "socket.io-client": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "systeminformation": "^5.25.11",
     "tmp": "^0.2.3"
   },
   "devDependencies": {

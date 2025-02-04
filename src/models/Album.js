@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 /**
@@ -99,16 +100,6 @@ const AlbumSchema = new mongoose.Schema({
   }
 });
 
-
-AlbumSchema.pre("find", function (next) {
-  this.start = Date.now(); 
-  next();
-});
-
-AlbumSchema.post("find", function (docs, next) {
-  const executionTimeMs = Date.now() - this.start; 
-  console.log(`Requête Mongoose 'find' exécutée en ${executionTimeMs} ms`);
-
 AlbumSchema.pre("save", async function (next) {
   if (this.isModified("tracks")) {
     this.trackCount = this.tracks.length;
@@ -125,6 +116,15 @@ AlbumSchema.pre("findOneAndUpdate", async function (next) {
 
   next();
 });
+
+// AlbumSchema.pre("find", function (next) {
+//   this.start = Date.now();
+//   next();
+// });
+
+// AlbumSchema.post("find", function (docs, next) {
+//   const executionTimeMs = Date.now() - this.start;
+// });
 
 const Album = mongoose.model("Album", AlbumSchema);
 
