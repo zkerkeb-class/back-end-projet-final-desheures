@@ -20,7 +20,7 @@ const server = http.createServer(app);
 //   console.log(test);
 //   return mauvaisVar;
 // }
-
+app.use("*", middlewares.corsOptions);
 app.use(middlewares.metrics.APIReqestTime);
 // app.use(middlewares.rateLimiter);
 app.use(express.json());
@@ -30,12 +30,13 @@ app.use(
   middlewares.corsOptions,
   express.static(path.join(__dirname, "/../uploads/images"))
 );
+
 app.use(
   "/uploads/audios/wav",
   middlewares.corsOptions,
   express.static(path.join(__dirname, "/../uploads/audios/wav"))
 );
-app.use("*", middlewares.corsOptions);
+
 app.use(middlewares.helmet);
 app.use(middlewares.dbTimer);
 app.use(middlewares.requestStats.requestStatsMiddleware);

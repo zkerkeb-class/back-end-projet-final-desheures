@@ -5,8 +5,8 @@ const allowedOrigins = [env.frontend_url, env.backoffice_url];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true); // ✅ Renvoie `true` au lieu de `allowedOrigins[0]`
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, origin || allowedOrigins[0]);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
