@@ -22,6 +22,8 @@ const server = http.createServer(app);
 // }
 app.use("*", middlewares.corsOptions);
 app.use(middlewares.metrics.APIReqestTime);
+app.use(middlewares.requestStats.requestStatsMiddleware);
+app.use(middlewares.metrics.dbTimer);
 // app.use(middlewares.rateLimiter);
 app.use(express.json());
 app.use(...middlewares.bodyParser);
@@ -38,9 +40,8 @@ app.use(
 );
 
 app.use(middlewares.helmet);
-app.use(middlewares.dbTimer);
-app.use(middlewares.requestStats.requestStatsMiddleware);
-app.use("/api/stats", middlewares.requestStats.getRequestStats);
+
+
 
 app.use(middlewares.redisLatency(config.redis));
 
