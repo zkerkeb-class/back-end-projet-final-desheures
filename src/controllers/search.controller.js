@@ -81,14 +81,11 @@ const controller = {
         });
 
         const [artists, albums, tracks, playlists, total] = await Promise.all([
-          Artist.find(searchQuery).skip(skip).limit(limit),
-          Album.find(searchQuery).populate("artist").skip(skip).limit(limit),
-          Audio.find(searchQuery)
-            .populate("artist album")
-            .skip(skip)
-            .limit(limit),
-          Playlist.find(searchQuery).skip(skip).limit(limit),
-          Audio.countDocuments(searchQuery)
+          await monitorMongoQuery('findArtisteByGenre', 'Artiste', () => Artist.find(searchQuery).skip(skip).limit(limit).exec()),
+          await monitorMongoQuery('findAlbumByArtiste', 'Album', () => Album.find(searchQuery).populate("artist").skip(skip).limit(limit).exec()),
+          await monitorMongoQuery('findAudioByArtiste', 'Audio', () => Audio.find(searchQuery).populate("artist album").skip(skip).limit(limit).exec()),
+          await monitorMongoQuery('findPlaylistByType', 'Playlist', () => Playlist.find(searchQuery).skip(skip).limit(limit).exec()),
+          await monitorMongoQuery('countDocuments', 'Audio', () => Audio.countDocuments(searchQuery).exec()),
         ]);
 
         results.artists = artists;
@@ -262,9 +259,12 @@ const controller = {
     }
 
     const [albumGenres, audioGenres, artistGenres] = await Promise.all([
-      Album.distinct("genres"),
-      Audio.distinct("genres"),
-      Artist.distinct("genres")
+      await monitorMongoQuery('distinctAlbumByGenre', 'Album', () => Album.distinct("genres").exec()),
+      await monitorMongoQuery('distinctAudioByGenre', 'Audio', () => Audio.distinct("genres").exec()),
+      await monitorMongoQuery('distinctArtisteByGenre', 'Artiste', () => Artist.distinct("genres").exec())
+      ,
+      ,
+      
     ]);
 
     const allGenres = Array.from(

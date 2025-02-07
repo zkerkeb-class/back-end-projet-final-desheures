@@ -7,9 +7,9 @@ const { monitorMongoQuery } = require("../utils/metrics/metrics");
 module.exports = {
   getAllGenres: async (req, res) => {
     try {
-      const albumGenres = await monitorMongoQuery('distinct', 'Album', () => Album.distinct("genres").exec());
-      const audioGenres = await monitorMongoQuery('distinct', 'Audio', () => Audio.distinct("genres").exec());
-      const artistGenres = await monitorMongoQuery('distinct', 'Artiste', () => Artist.distinct("genres").exec());
+      const albumGenres = await monitorMongoQuery('distinctAlbumByGenre', 'Album', () => Album.distinct("genres").exec());
+      const audioGenres = await monitorMongoQuery('distinctAudioByGenre', 'Audio', () => Audio.distinct("genres").exec());
+      const artistGenres = await monitorMongoQuery('distinctArtisteByGenre', 'Artiste', () => Artist.distinct("genres").exec());
 
       const allGenres = Array.from(
         new Set([...albumGenres, ...audioGenres, ...artistGenres])
@@ -26,7 +26,7 @@ module.exports = {
   getAlbumsByArtist: async (req, res) => {
     try {
       const { artistId } = req.params;
-      const albums = await monitorMongoQuery('findAlbumByArtiste', 'AlbumByArtiste', () => Album.find({ artist: artistId }).exec());
+      const albums = await monitorMongoQuery('findAlbumByArtiste', 'Album', () => Album.find({ artist: artistId }).exec());
       const cacheKey = `albums:artist:${artistId}`;
 
       const cachedAlbums = await config.redis.get(cacheKey);
@@ -64,7 +64,7 @@ module.exports = {
       if (cachedTracks) {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
-      const tracks = await monitorMongoQuery('findAudioByArtiste', 'AudioByArtiste', () => Audio.find({ artist: artistId }).exec());
+      const tracks = await monitorMongoQuery('findAudioByArtiste', 'Audio', () => Audio.find({ artist: artistId }).exec());
 
       if (tracks.length === 0) {
         return res
@@ -96,7 +96,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
 
-      const tracks = await monitorMongoQuery('findTracksByAlbum', 'TracksByAlbum', () => Audio.find({ album: albumId }).exec());
+      const tracks = await monitorMongoQuery('findTracksByAlbum', 'Audio', () => Audio.find({ album: albumId }).exec());
       if (tracks.length === 0) {
         return res
           .status(404)
@@ -119,7 +119,7 @@ module.exports = {
   getArtistsByGenre: async (req, res) => {
     try {
       const { genre } = req.params;
-      const artists = await monitorMongoQuery('findArtisteByGenre', 'ArtisteByGenre', () => Artist.find({ genres: genre }).exec());
+      const artists = await monitorMongoQuery('findArtisteByGenre', 'Artiste', () => Artist.find({ genres: genre }).exec());
       const cacheKey = `artists:genre:${genre}`;
       const cachedArtists = await config.redis.get(cacheKey);
 
@@ -148,7 +148,7 @@ module.exports = {
   getAlbumsByGenre: async (req, res) => {
     try {
       const { genre } = req.params;
-      const albums = await monitorMongoQuery('findAlbumByGenre', 'AlbumByGenre', () => Album.find({ genres: genre }).exec());
+      const albums = await monitorMongoQuery('findAlbumByGenre', 'Album', () => Album.find({ genres: genre }).exec());
       const cacheKey = `albums:genre:${genre}`;
       const cachedAlbums = await config.redis.get(cacheKey);
 
@@ -177,7 +177,7 @@ module.exports = {
   getTracksByGenre: async (req, res) => {
     try {
       const { genre } = req.params;
-      const tracks = await monitorMongoQuery('findAudioByGenre', 'AudioByGenre', () => Audio.find({ genres: genre }).exec());
+      const tracks = await monitorMongoQuery('findAudioByGenre', 'Audio', () => Audio.find({ genres: genre }).exec());
       const cacheKey = `tracks:genre:${genre}`;
       const cachedTracks = await config.redis.get(cacheKey);
 
@@ -217,7 +217,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await monitorMongoQuery('findByYear', 'AlbumByYear', () => {
+      const albums = await monitorMongoQuery('findByYear', 'Album', () => {
       Album.find({
         releaseDate: { $gte: startOfYear, $lte: endOfYear }
       }).exec()
@@ -254,7 +254,7 @@ module.exports = {
       if (cachedTracks) {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
-      const tracks = await monitorMongoQuery('findAudioByYear', 'AudioByYear', () => {
+      const tracks = await monitorMongoQuery('findAudioByYear', 'Audio', () => {
       Audio.find({
         releaseDate: { $gte: startOfYear, $lte: endOfYear }
       }).exec()
@@ -299,7 +299,7 @@ module.exports = {
         return res.status(400).json({ message: "Plage de durée invalide" });
       }
 
-      const tracks = await monitorMongoQuery('findAudioByDuration', 'AudioByDuration', () => Audio.find(durationFilter).exec());
+      const tracks = await monitorMongoQuery('findAudioByDuration', 'Audio', () => Audio.find(durationFilter).exec());
 
       if (tracks.length === 0) {
         return res
@@ -336,7 +336,7 @@ module.exports = {
         }
       };
 
-      const tracks = await monitorMongoQuery('findAudioByPopularity', 'AudioByPopularity', () => Audio.find(popularityFilter).exec());
+      const tracks = await monitorMongoQuery('findAudioByPopularity', 'Audio', () => Audio.find(popularityFilter).exec());
       if (tracks.length === 0) {
         return res.status(404).json({
           message: "Aucune piste trouvée pour cette plage de popularité"
@@ -365,7 +365,7 @@ module.exports = {
       if (cachedTracks) {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
-      const playlist = await monitorMongoQuery('findPlaylistById', 'PlaylistById', () => Playlist.findById(playlistId).populate("tracks").exec());
+      const playlist = await monitorMongoQuery('findPlaylistById', 'Playlist', () => Playlist.findById(playlistId).populate("tracks").exec());
 
       if (!playlist) {
         return res.status(404).json({ message: "Playlist introuvable" });

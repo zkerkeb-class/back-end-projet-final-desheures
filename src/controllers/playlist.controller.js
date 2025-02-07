@@ -1,13 +1,18 @@
 const Playlist = require("../models/Playlist");
 const config = require("../config");
+const { monitorMongoQuery } = require("../utils/metrics/metrics")
 
 const playlistSocketController = {
   getPlaylistByType: async (sessionId, playlistType) => {
     try {
-      const playlist = await Playlist.findOne({
-        sessionId,
-        playlistType
-      }).populate("tracks", "title duration imageUrl albumCoverUrl");
+      const playlist = await monitorMongoQuery('findPlaylistByType', 'Playlist', () => {
+        Playlist.findOne({
+          sessionId,
+          playlistType
+        })
+        .populate("tracks", "title duration imageUrl albumCoverUrl")
+        .exec();
+      });
 
       if (!playlist) {
         const defaultName =
@@ -40,9 +45,12 @@ const playlistSocketController = {
 
   updatePlaylistByType: async (trackId, sessionId, playlistType) => {
     try {
-      let playlist = await Playlist.findOne({
-        sessionId,
-        playlistType
+      let playlist = await monitorMongoQuery('updatePlaylistByType', 'Playlist', () => {
+        Playlist.findOne({
+          sessionId,
+          playlistType
+        })
+        .exec()
       });
 
       if (!playlist) {
@@ -106,7 +114,8 @@ module.exports = {
         ...req.body,
         trackCount
       });
-      const savedPlaylist = await playlist.save();
+      const savedPlaylist = await monitorMongoQuery('create', 'Playlist', () => playlist.save().exec());
+
 
       await config.redis.del("playlists:all");
       res.status(201).json(savedPlaylist);
@@ -124,10 +133,12 @@ module.exports = {
       if (cachedPlaylists) {
         return res.status(200).json(JSON.parse(cachedPlaylists));
       }
-      const playlists = await Playlist.find().populate(
-        "tracks",
-        "title duration"
-      );
+      const playlists = await monitorMongoQuery('find', 'Playlist', () => {
+        Playlist.find().populate(
+          "tracks",
+          "title duration"
+        ).exec();
+      });
 
       await config.redis.set("playlists:all", JSON.stringify(playlists), {
         EX: 3600
@@ -150,10 +161,14 @@ module.exports = {
       if (cachedPlaylist) {
         return res.status(200).json(JSON.parse(cachedPlaylist));
       }
-      const playlist = await Playlist.findById(req.params.id).populate(
-        "tracks",
-        "title duration"
-      );
+      const playlist = await monitorMongoQuery('findPlaylistById', 'Playlist', () => {
+        Playlist.findById(req.params.id)
+        .populate(
+          "tracks",
+          "title duration"
+        )
+        .exec();
+      });
 
       if (!playlist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
@@ -175,14 +190,18 @@ module.exports = {
   updatePlaylist: async (req, res) => {
     try {
       const { tracks } = req.body;
-      const updatedPlaylist = await Playlist.findByIdAndUpdate(
-        req.params.id,
-        {
-          ...req.body,
-          ...(tracks && { trackCount: tracks.length })
-        },
-        { new: true }
-      ).populate("tracks", "title duration");
+      const updatedPlaylist = await monitorMongoQuery('update', 'Playlist', () => {
+        Playlist.findByIdAndUpdate(
+          req.params.id,
+          {
+            ...req.body,
+            ...(tracks && { trackCount: tracks.length })
+          },
+          { new: true }
+        )
+        .populate("tracks", "title duration")
+        .exec();
+      });
       if (!updatedPlaylist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }
@@ -205,7 +224,7 @@ module.exports = {
 
   deletePlaylist: async (req, res) => {
     try {
-      const deletedPlaylist = await Playlist.findByIdAndDelete(req.params.id);
+      const deletedPlaylist = await monitorMongoQuery('delete', 'Playlist', () => Playlist.findByIdAndDelete(req.params.id).exec());
       if (!deletedPlaylist) {
         return res.status(404).json({ message: "Playlist non trouvée" });
       }
