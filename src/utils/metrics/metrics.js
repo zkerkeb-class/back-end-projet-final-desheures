@@ -266,9 +266,6 @@ async function getSystemMetrics(req, res, next)  {
   }
   
 
-
-
-
 // -------------------------------
 // 6. Export des fonctionnalités de monitoring
 // -------------------------------
