@@ -3,7 +3,8 @@ const promClient = require('prom-client');
 const os = require('os');
 const diskusage = require('diskusage');
 const { redisClient } = require('../../config/redis');
-
+const si = require("systeminformation");
+const config = require("../../config");
 
 
 // -------------------------------
@@ -11,9 +12,6 @@ const { redisClient } = require('../../config/redis');
 // -------------------------------
 // promClient.collectDefaultMetrics({ prefix: 'node_app_' });
 
-// -------------------------------
-// 2. Définition des métriques personnalisées
-// -------------------------------
 
 // a) Mesurer le temps des requêtes HTTP
 const httpRequestDurationMilliseconds = new promClient.Histogram({
@@ -113,7 +111,7 @@ const mongoQueryDurationMs = new promClient.Histogram({
  * Middleware Express qui mesure le temps de réponse des requêtes et la bande passante.
  */
 function metricsMiddleware(req, res, next) {
-    console.log(req.path);
+    // console.log(req.path);
     if (req.path === "/api/metrics/") {
         return next(); // Ignore ce middleware pour cette route
       }
@@ -227,44 +225,79 @@ async function getMetrics() {
 /**
  * Fonction pour récupérer les statistiques système en temps réel.
  */
-async function getSystemMetrics(req, res, next)  {
-    // Utilisation de la mémoire en Mo
-    const totalMemory = os.totalmem() / (1024 * 1024);
-    const freeMemory = os.freemem() / (1024 * 1024);
-    const usedMemory = totalMemory - freeMemory;
+// async function getSystemMetrics(req, res, next) {
+//     // Utilisation de la mémoire en Mo
+//     const totalMemory = os.totalmem() / (1024 * 1024);
+//     const freeMemory = os.freemem() / (1024 * 1024);
+//     const usedMemory = totalMemory - freeMemory;
   
-    // Utilisation du CPU
-    const cpus = os.cpus();
-    let totalIdle = 0, totalTick = 0;
+//     // Utilisation du CPU
+//     const cpus = os.cpus();
+//     let totalIdle = 0, totalTick = 0;
   
-    cpus.forEach((cpu) => {
-      for (let type in cpu.times) {
-        totalTick += cpu.times[type];
-      }
-      totalIdle += cpu.times.idle;
-    });
+//     cpus.forEach((cpu) => {
+//       for (let type in cpu.times) {
+//         totalTick += cpu.times[type];
+//       }
+//       totalIdle += cpu.times.idle;
+//     });
   
-    const idleDiff = totalIdle / cpus.length;
-    const totalDiff = totalTick / cpus.length;
-    const cpuUsage = (1 - idleDiff / totalDiff) * 100;
+//     const idleDiff = totalIdle / cpus.length;
+//     const totalDiff = totalTick / cpus.length;
+//     const cpuUsage = (1 - idleDiff / totalDiff) * 100;
   
-    // Espace disque
-    const path = os.platform() === 'win32' ? 'C:' : '/';
-    let availableDiskGb = null;
+//     // Espace disque
+//     const path = os.platform() === 'win32' ? 'C:' : '/';
+//     let availableDiskGb = null;
+//     try {
+//       const info = await diskusage.check(path);
+//       availableDiskGb = info.available / (1024 * 1024 * 1024);
+//     } catch (error) {
+//       console.error("Erreur lors de la récupération de l'espace disque:", error);
+//     }
+  
+//     res.json({
+//       cpu_usage_percent: parseFloat(cpuUsage.toFixed(2)),
+//       memory_usage_mb: parseFloat(usedMemory.toFixed(2)),
+//       disk_available_gb: parseFloat((availableDiskGb || 0).toFixed(2))
+//     });
+// }
+
+async function getSystemMetrics(req, res, next) {
     try {
-      const info = await diskusage.check(path);
-      availableDiskGb = info.available / (1024 * 1024 * 1024);
-    } catch (error) {
-      console.error("Erreur lors de la récupération de l'espace disque:", error);
+        const cpu = await si.currentLoad();
+        const memory = await si.mem();
+        const disk = await si.fsSize();
+        const metrics = {
+          cpu: {
+            usage_percent: `${cpu.currentLoad.toFixed(2)}`,
+          },
+          memory: {
+            total_GB: `${(memory.total / 1e9).toFixed(2)}`,
+            used_GB: `${(memory.active / 1e9).toFixed(2)}`,
+            free_GB: `${(memory.available / 1e9).toFixed(2)}`
+          },
+          disk: disk.map((d) => ({
+            filesystem: d.fs,
+            total_GB: `${(d.size / 1e9).toFixed(2)}`,
+            used_GB: `${(d.used / 1e9).toFixed(2)}`,
+            usage_percent: `${((d.used / d.size) * 100).toFixed(2)}`
+          }))
+        };
+  
+        res.status(200).json(metrics);
+    } catch (err) {
+        config.logger.error(
+          "Erreur lors de la collecte des métriques serveur :",
+          err
+        );
+        res
+          .status(500)
+          .json({ error: "Impossible de récupérer les métriques serveur" });
     }
+}
   
-    res.json({
-      cpu_usage_percent: parseFloat(cpuUsage.toFixed(2)),
-      memory_usage_mb: parseFloat(usedMemory.toFixed(2)),
-      disk_available_gb: parseFloat((availableDiskGb || 0).toFixed(2))
-    });
-  }
-  
+
 
 // -------------------------------
 // 6. Export des fonctionnalités de monitoring
