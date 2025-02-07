@@ -4,6 +4,8 @@ const os = require('os');
 const diskusage = require('diskusage');
 const { redisClient } = require('../../config/redis');
 
+
+
 // -------------------------------
 // 1. Collecte des métriques par défaut
 // -------------------------------
@@ -111,6 +113,10 @@ const mongoQueryDurationMs = new promClient.Histogram({
  * Middleware Express qui mesure le temps de réponse des requêtes et la bande passante.
  */
 function metricsMiddleware(req, res, next) {
+    console.log(req.path);
+    if (req.path === "/api/metrics/") {
+        return next(); // Ignore ce middleware pour cette route
+      }
   const start = process.hrtime();
 
   // Comptabilisation de la bande passante entrante
@@ -143,8 +149,6 @@ function metricsMiddleware(req, res, next) {
 
   // Une fois la réponse envoyée, enregistre le temps de réponse et les compteurs
   res.on('finish', () => {
-    // const duration = (Date.now() - startEpoch);
-    
     const route = (req.route && req.route.path) ? req.route.path : req.path;
     const diff = process.hrtime(start);
     const responseTimeInMs = (diff[0] * 1e9 + diff[1]) / 1e6; // Convert to milliseconds
@@ -217,6 +221,54 @@ async function getMetrics() {
   return await promClient.register.getMetricsAsJSON();
 }
 
+
+
+
+/**
+ * Fonction pour récupérer les statistiques système en temps réel.
+ */
+async function getSystemMetrics(req, res, next)  {
+    // Utilisation de la mémoire en Mo
+    const totalMemory = os.totalmem() / (1024 * 1024);
+    const freeMemory = os.freemem() / (1024 * 1024);
+    const usedMemory = totalMemory - freeMemory;
+  
+    // Utilisation du CPU
+    const cpus = os.cpus();
+    let totalIdle = 0, totalTick = 0;
+  
+    cpus.forEach((cpu) => {
+      for (let type in cpu.times) {
+        totalTick += cpu.times[type];
+      }
+      totalIdle += cpu.times.idle;
+    });
+  
+    const idleDiff = totalIdle / cpus.length;
+    const totalDiff = totalTick / cpus.length;
+    const cpuUsage = (1 - idleDiff / totalDiff) * 100;
+  
+    // Espace disque
+    const path = os.platform() === 'win32' ? 'C:' : '/';
+    let availableDiskGb = null;
+    try {
+      const info = await diskusage.check(path);
+      availableDiskGb = info.available / (1024 * 1024 * 1024);
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'espace disque:", error);
+    }
+  
+    res.json({
+      cpu_usage_percent: parseFloat(cpuUsage.toFixed(2)),
+      memory_usage_mb: parseFloat(usedMemory.toFixed(2)),
+      disk_available_gb: parseFloat((availableDiskGb || 0).toFixed(2))
+    });
+  }
+  
+
+
+
+
 // -------------------------------
 // 6. Export des fonctionnalités de monitoring
 // -------------------------------
@@ -225,6 +277,7 @@ module.exports = {
   monitorMongoQuery,
 //   monitorRedisCommand,
   getMetrics,
+  getSystemMetrics,
   // Pour pouvoir éventuellement étendre ou consulter d'autres métriques :
   promClient
 };
