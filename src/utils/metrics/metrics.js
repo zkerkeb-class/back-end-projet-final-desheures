@@ -61,7 +61,7 @@ const mongoQueryDurationMs = new promClient.Histogram({
     labelNames: ['operation', 'collection']
   });
 
-// // d) Durée des commandes Redis
+// d) Durée des commandes Redis
 // const redisCommandDurationSeconds = new promClient.Histogram({
 //   name: 'redis_command_duration_seconds',
 //   help: 'Durée d\'exécution des commandes Redis en secondes',
@@ -69,47 +69,17 @@ const mongoQueryDurationMs = new promClient.Histogram({
 //   buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
 // });
 
-// // e) Gauge pour l'espace disque disponible
-// const diskSpaceGauge = new promClient.Gauge({
-//   name: 'disk_space_available_bytes',
-//   help: 'Espace disque disponible en octets',
-//   labelNames: ['mount']
-// });
+// f) Compteur pour mesurer la bande passante (en octets transférés)
+const bandwidthBytesCounter = new promClient.Counter({
+  name: 'http_bandwidth_bytes_total',
+  help: 'Nombre total d\'octets transférés',
+  labelNames: ['direction'] // 'in' pour les données entrantes, 'out' pour les données sortantes
+});
 
-// // f) Compteur pour mesurer la bande passante (en octets transférés)
-// const bandwidthBytesCounter = new promClient.Counter({
-//   name: 'http_bandwidth_bytes_total',
-//   help: 'Nombre total d\'octets transférés',
-//   labelNames: ['direction'] // 'in' pour les données entrantes, 'out' pour les données sortantes
-// });
-
-// -------------------------------
-// 3. Initialisation du client Redis
-// -------------------------------
-// const redisClient = redis.createClient();
-
-// -------------------------------
-// 4. Mise à jour périodique de l'espace disque
-// -------------------------------
-// function updateDiskUsage() {
-//   // Exemple pour Linux (la racine "/") ou Windows (disque "c:")
-//   const path = os.platform() === 'win32' ? 'c:' : '/';
-//   diskusage.check(path, (err, info) => {
-//     if (!err && info) {
-//       diskSpaceGauge.labels(path).set(info.available);
-//     }
-//   });
-// }
-// setInterval(updateDiskUsage, 10000); // mise à jour toutes les 10 secondes
-// updateDiskUsage();
 
 // -------------------------------
 // 5. Middlewares et Helpers de Monitoring
 // -------------------------------
-
-/**
- * Middleware Express qui mesure le temps de réponse des requêtes et la bande passante.
- */
 function metricsMiddleware(req, res, next) {
     console.log(req.path);
     if (req.path === "/api/metrics/") {
@@ -118,32 +88,32 @@ function metricsMiddleware(req, res, next) {
   const start = process.hrtime();
 
   // Comptabilisation de la bande passante entrante
-//   const reqContentLength = parseInt(req.headers['content-length'] || '0', 10);
-//   bandwidthBytesCounter.labels('in').inc(reqContentLength);
+  const reqContentLength = parseInt(req.headers['content-length'] || '0', 10);
+  bandwidthBytesCounter.labels('in').inc(reqContentLength);
 
   // Intercepter l'écriture de la réponse pour mesurer la bande passante sortante
-//   const originalWrite = res.write;
-//   const originalEnd = res.end;
-//   let responseLength = 0;
+  const originalWrite = res.write;
+  const originalEnd = res.end;
+  let responseLength = 0;
 
-//   res.write = function (chunk, encoding, callback) {
-//     if (chunk) {
-//       responseLength += Buffer.isBuffer(chunk)
-//         ? chunk.length
-//         : Buffer.byteLength(chunk, encoding);
-//     }
-//     originalWrite.apply(res, arguments);
-//   };
+  res.write = function (chunk, encoding, callback) {
+    if (chunk) {
+      responseLength += Buffer.isBuffer(chunk)
+        ? chunk.length
+        : Buffer.byteLength(chunk, encoding);
+    }
+    originalWrite.apply(res, arguments);
+  };
 
-//   res.end = function (chunk, encoding, callback) {
-//     if (chunk) {
-//       responseLength += Buffer.isBuffer(chunk)
-//         ? chunk.length
-//         : Buffer.byteLength(chunk, encoding);
-//     }
-//     bandwidthBytesCounter.labels('out').inc(responseLength);
-//     originalEnd.apply(res, arguments);
-//   };
+  res.end = function (chunk, encoding, callback) {
+    if (chunk) {
+      responseLength += Buffer.isBuffer(chunk)
+        ? chunk.length
+        : Buffer.byteLength(chunk, encoding);
+    }
+    bandwidthBytesCounter.labels('out').inc(responseLength);
+    originalEnd.apply(res, arguments);
+  };
 
   // Une fois la réponse envoyée, enregistre le temps de réponse et les compteurs
   res.on('finish', () => {
@@ -220,49 +190,6 @@ async function getMetrics() {
 }
 
 
-
-
-/**
- * Fonction pour récupérer les statistiques système en temps réel.
- */
-// async function getSystemMetrics(req, res, next) {
-//     // Utilisation de la mémoire en Mo
-//     const totalMemory = os.totalmem() / (1024 * 1024);
-//     const freeMemory = os.freemem() / (1024 * 1024);
-//     const usedMemory = totalMemory - freeMemory;
-  
-//     // Utilisation du CPU
-//     const cpus = os.cpus();
-//     let totalIdle = 0, totalTick = 0;
-  
-//     cpus.forEach((cpu) => {
-//       for (let type in cpu.times) {
-//         totalTick += cpu.times[type];
-//       }
-//       totalIdle += cpu.times.idle;
-//     });
-  
-//     const idleDiff = totalIdle / cpus.length;
-//     const totalDiff = totalTick / cpus.length;
-//     const cpuUsage = (1 - idleDiff / totalDiff) * 100;
-  
-//     // Espace disque
-//     const path = os.platform() === 'win32' ? 'C:' : '/';
-//     let availableDiskGb = null;
-//     try {
-//       const info = await diskusage.check(path);
-//       availableDiskGb = info.available / (1024 * 1024 * 1024);
-//     } catch (error) {
-//       console.error("Erreur lors de la récupération de l'espace disque:", error);
-//     }
-  
-//     res.json({
-//       cpu_usage_percent: parseFloat(cpuUsage.toFixed(2)),
-//       memory_usage_mb: parseFloat(usedMemory.toFixed(2)),
-//       disk_available_gb: parseFloat((availableDiskGb || 0).toFixed(2))
-//     });
-// }
-
 async function getSystemMetrics(req, res, next) {
     try {
         const cpu = await si.currentLoad();
@@ -305,7 +232,7 @@ async function getSystemMetrics(req, res, next) {
 module.exports = {
   metricsMiddleware,
   monitorMongoQuery,
-//   monitorRedisCommand,
+  monitorRedisCommand,
   getMetrics,
   getSystemMetrics,
   // Pour pouvoir éventuellement étendre ou consulter d'autres métriques :
