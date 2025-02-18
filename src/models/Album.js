@@ -77,7 +77,16 @@ const AlbumSchema = new mongoose.Schema({
     default: []
   },
   coverUrl: {
-    type: String
+    type: String,
+    default: "uploads/images/default_cover.webp"
+  },
+  coverUrls: {
+    webp: {
+      type: String
+    },
+    jpg: {
+      type: String
+    }
   },
   tracks: [
     {
@@ -102,6 +111,9 @@ const AlbumSchema = new mongoose.Schema({
 AlbumSchema.pre("save", async function (next) {
   if (this.isModified("tracks")) {
     this.trackCount = this.tracks.length;
+  }
+  if (this.coverUrls && this.coverUrls.webp) {
+    this.coverUrl = this.coverUrls.webp;
   }
   next();
 });

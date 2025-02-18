@@ -88,6 +88,14 @@ const AudioSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  audioUrls: {
+    mp3: {
+      type: String
+    },
+    wav: {
+      type: String
+    }
+  },
   lyrics: {
     type: String
   },
@@ -112,6 +120,13 @@ const AudioSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+AudioSchema.pre("save", function (next) {
+  if (this.audioUrls && this.audioUrls.wav) {
+    this.audioUrl = this.audioUrls.wav; // Met à jour l'ancien champ avec la version MP3
+  }
+  next();
 });
 
 // AudioSchema.pre("find", function (next) {

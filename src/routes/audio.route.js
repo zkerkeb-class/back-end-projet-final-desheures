@@ -156,13 +156,18 @@ router.use(express.urlencoded({ limit: "50mb", extended: true }));
  *         description: Erreur serveur.
  */
 
+const upload = multer({ storage: multer.memoryStorage() });
 router.get("/", audioController.getAllAudios);
 router.get("/:id", audioController.getAudioById);
-router.post("/", middlewares.isAuth, audioController.createAudio);
+router.post(
+  "/",
+  upload.single("file"),
+  middlewares.isAuth,
+  audioController.createAudio
+);
 router.put("/:id", middlewares.isAuth, audioController.updateAudio);
 router.delete("/:id", middlewares.isAuth, audioController.deleteAudio);
 
 // Configurer Multer pour stocker le fichier en mémoire
-const upload = multer({ storage: multer.memoryStorage() });
 router.post("/convert", upload.single("file"), audioController.convertAudio);
 module.exports = router;

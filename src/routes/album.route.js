@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const albumController = require("../controllers/album.controller");
 const middlewares = require("../middlewares/");
-
+const {
+  album: { albumValidationRules, validateAlbumId, validate }
+} = require("../validations");
 /**
  * @swagger
  * tags:
@@ -145,9 +147,31 @@ const middlewares = require("../middlewares/");
  */
 
 router.get("/", albumController.getAllAlbums);
-router.get("/:id", albumController.getAlbumById);
-router.post("/", middlewares.isAuth, albumController.createAlbum);
-router.put("/:id", middlewares.isAuth, albumController.updateAlbum);
-router.delete("/:id", middlewares.isAuth, albumController.deleteAlbum);
+
+router.get("/:id", validateAlbumId(), validate, albumController.getAlbumById);
+
+router.post(
+  "/",
+  middlewares.isAuth,
+  albumValidationRules(),
+  validate,
+  albumController.createAlbum
+);
+
+router.put(
+  "/:id",
+  middlewares.isAuth,
+  validateAlbumId(),
+  albumValidationRules(),
+  validate,
+  albumController.updateAlbum
+);
+router.delete(
+  "/:id",
+  middlewares.isAuth,
+  validateAlbumId(),
+  validate,
+  albumController.deleteAlbum
+);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 /**
@@ -86,7 +85,16 @@ const ArtistSchema = new mongoose.Schema({
     type: String
   },
   imageUrl: {
-    type: String
+    type: String,
+    default: "uploads/images/default_artist.webp"
+  },
+  imageUrls: {
+    webp: {
+      type: String
+    },
+    jpg: {
+      type: String
+    }
   },
   socialLinks: [
     {
@@ -111,6 +119,12 @@ const ArtistSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+ArtistSchema.pre("save", function (next) {
+  if (this.imageUrls && this.imageUrls.webp) {
+    this.imageUrl = this.imageUrls.webp;
+  }
+  next();
+});
 // ArtistSchema.pre("find", function (next) {
 //   this.start = Date.now();
 //   next();
