@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const config = require("../config");
+const { monitorMongoQuery } = require("../utils/metrics/metrics");
 
 module.exports = {
   // Connexion utilisateur
@@ -15,7 +16,7 @@ module.exports = {
           .json({ message: "Seul l'administrateur peut se connecter." });
       }
 
-      let adminUser = await User.findOne({ email });
+      let adminUser = await monitorMongoQuery('find', 'User', () => User.findOne({ email }).exec());
 
       if (!adminUser) {
         const hashedPassword = await bcrypt.hash(config.env.admin_password, 10);
@@ -36,24 +37,20 @@ module.exports = {
       if (!isPasswordValid) {
         return res.status(401).json({ message: "Mot de passe incorrect." });
       }
-
-      const token = jwt.sign(
-        {
-          id: adminUser._id,
-          username: adminUser.username,
-          email: adminUser.email,
-          role: adminUser.role
-        },
-        config.env.jwt_secret,
-        { expiresIn: "1h" }
-      );
-
       req.session.user = {
         id: adminUser._id,
         username: adminUser.username,
         email: adminUser.email,
         role: adminUser.role
       };
+
+      const token = jwt.sign(
+        req.session.user,
+        config.env.jwt_secret,
+        { expiresIn: "1h" }
+      );
+
+      
 
       res.status(200).json({ message: "Connexion réussie.", token });
     } catch (error) {

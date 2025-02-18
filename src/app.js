@@ -11,7 +11,7 @@ const secretKey = crypto.randomBytes(64).toString("hex");
 const configureWebSocket = require("./utils/sockets/websockets");
 const path = require("path");
 const { startScheduledBackups } = require("./utils/backup/backup.cron");
-
+const { metricsMiddleware } = require('./utils/metrics/metrics');
 const server = http.createServer(app);
 
 // function testHusky() {
@@ -21,7 +21,13 @@ const server = http.createServer(app);
 //   return mauvaisVar;
 // }
 app.use("*", middlewares.corsOptions);
-app.use(middlewares.metrics.APIReqestTime);
+// app.use(middlewares.metrics.APIReqestTime);
+// app.use(middlewares.requestStats.requestStatsMiddleware);
+// app.use(middlewares.metrics.dbTimer);
+
+// Utilisation du middleware de monitoring pour toutes les routes
+app.use(metricsMiddleware);
+
 // app.use(middlewares.rateLimiter);
 app.use(express.json());
 app.use(...middlewares.bodyParser);
@@ -38,11 +44,10 @@ app.use(
 );
 
 app.use(middlewares.helmet);
-app.use(middlewares.dbTimer);
-app.use(middlewares.requestStats.requestStatsMiddleware);
-app.use("/api/stats", middlewares.requestStats.getRequestStats);
 
-app.use(middlewares.redisLatency(config.redis));
+
+
+// app.use(middlewares.redisLatency(config.redis));
 
 app.use(
   session({

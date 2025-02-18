@@ -83,7 +83,7 @@ module.exports = {
   createAudio: async (req, res) => {
     try {
       const audio = new Audio(req.body);
-      const savedAudio = await audio.save();
+      const savedAudio = await monitorMongoQuery('create', 'Audio', () => audio.save().exec());
 
       await config.redis.del("audios:all");
       res.status(201).json(savedAudio);
@@ -102,9 +102,13 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAudios));
       }
 
-      const audios = await Audio.find()
-        .populate("artist", "name imageUrl")
-        .populate("album", "title coverUrl");
+      const audios = await monitorMongoQuery('find', 'Audio', () => {
+        Audio.find()
+          .populate("artist", "name imageUrl")
+          .populate("album", "title coverUrl")
+          .exec()
+      });
+
 
       await config.redis.set("audios:all", JSON.stringify(audios), {
         EX: 3600
@@ -121,9 +125,13 @@ module.exports = {
 
   getAudioById: async (req, res) => {
     try {
-      const audio = await Audio.findById(req.params.id)
+      const audio = await monitorMongoQuery('findById', 'Audio', () => {
+      Audio.findById(req.params.id)
         .populate("artist", "name imageUrl")
-        .populate("album", "title coverUrl");
+        .populate("album", "title coverUrl")
+        .exec()
+      });
+
 
       const cacheKey = `audios:${req.params.id}`;
       const cachedAudio = await config.redis.get(cacheKey);
@@ -151,13 +159,17 @@ module.exports = {
 
   updateAudio: async (req, res) => {
     try {
-      const updatedAudio = await Audio.findByIdAndUpdate(
+      const updatedAudio = await monitorMongoQuery('update', 'Audio', () => {
+      Audio.findByIdAndUpdate(
         req.params.id,
         req.body,
         { new: true }
       )
         .populate("artist", "name")
-        .populate("album", "title");
+        .populate("album", "title")
+        .exec()
+      });
+
       if (!updatedAudio) {
         return res.status(404).json({ message: "Audio non trouvé" });
       }
@@ -179,7 +191,7 @@ module.exports = {
 
   deleteAudio: async (req, res) => {
     try {
-      const deletedAudio = await Audio.findByIdAndDelete(req.params.id);
+      const deletedAudio = await monitorMongoQuery('delete', 'Audio', () => Audio.findByIdAndDelete(req.params.id).exec());
       if (!deletedAudio) {
         return res.status(404).json({ message: "Audio non trouvé" });
       }

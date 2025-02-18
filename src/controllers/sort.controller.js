@@ -3,6 +3,7 @@ const Audio = require("../models/Audio");
 const Artist = require("../models/Artist");
 const Playlist = require("../models/Playlist");
 const config = require("../config");
+const { monitorMongoQuery } = require("../utils/metrics/metrics")
 
 module.exports = {
   getAudiosSortedByDuration: async (req, res) => {
@@ -17,7 +18,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAudios));
       }
 
-      const audios = await Audio.find().sort({ duration: sortOrder });
+      const audios = await monitorMongoQuery('findAudioByDuration', 'Audio', () => Audio.find().sort({ duration: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(audios), { EX: 3600 });
 
       res.status(200).json(audios);
@@ -40,7 +41,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await Album.find().sort({ releaseDate: sortOrder });
+      const albums = await monitorMongoQuery('findAlbumByReleaseDate', 'Album', () => Album.find().sort({ releaseDate: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(albums), { EX: 3600 });
 
       res.status(200).json(albums);
@@ -63,7 +64,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedArtists));
       }
 
-      const artists = await Artist.find().sort({ name: sortOrder });
+      const artists = await monitorMongoQuery('findArtisteByAlphabet', 'Artiste', () => Artist.find().sort({ name: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(artists), { EX: 3600 });
 
       res.status(200).json(artists);
@@ -87,7 +88,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedPlaylists));
       }
 
-      const playlists = await Playlist.find().sort({ trackCount: sortOrder });
+      const playlists = await monitorMongoQuery('findPlaylistByType', 'Playlist', () => Playlist.find().sort({ trackCount: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(playlists), { EX: 3600 });
 
       res.status(200).json(playlists);
@@ -111,7 +112,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAudios));
       }
 
-      const audios = await Audio.find().sort({ popularity: sortOrder });
+      const audios = await monitorMongoQuery('findAudioByPopularity', 'Audio', () => Audio.find().sort({ popularity: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(audios), { EX: 3600 });
 
       res.status(200).json(audios);
@@ -134,7 +135,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await Album.find().sort({ popularity: sortOrder });
+      const albums = await monitorMongoQuery('findAlbumByPopularity', 'Album', () => Album.find().sort({ popularity: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(albums), { EX: 3600 });
 
       res.status(200).json(albums);
@@ -157,7 +158,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedArtists));
       }
 
-      const artists = await Artist.find().sort({ popularity: sortOrder });
+      const artists = await monitorMongoQuery('findArtisteByPopularity', 'Artiste', () => Artist.find().sort({ popularity: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(artists), { EX: 3600 });
 
       res.status(200).json(artists);
@@ -180,7 +181,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await Album.find().sort({ trackCount: sortOrder });
+      const albums = await monitorMongoQuery('findAlbumByNumberOfTracks', 'Album', () => Album.find().sort({ trackCount: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(albums), { EX: 3600 });
 
       res.status(200).json(albums);
@@ -203,7 +204,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedTracks));
       }
 
-      const tracks = await Audio.find().sort({ title: sortOrder });
+      const tracks = await monitorMongoQuery('findAudioByTitle', 'Audio', () => Audio.find().sort({ title: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(tracks), { EX: 3600 });
 
       res.status(200).json(tracks);
@@ -226,7 +227,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await Album.find().sort({ releaseDate: sortOrder });
+      const albums = await monitorMongoQuery('findAlbumByReleaseDate', 'Album', () => Album.find().sort({ releaseDate: sortOrder }).exec());
       await config.redis.set(cacheKey, JSON.stringify(albums), { EX: 3600 });
 
       res.status(200).json(albums);

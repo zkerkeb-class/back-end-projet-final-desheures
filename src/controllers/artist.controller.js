@@ -1,11 +1,12 @@
 const config = require("../config");
 const Artist = require("../models/Artist");
+const { monitorMongoQuery } = require("../utils/metrics/metrics");
 
 module.exports = {
   createArtist: async (req, res) => {
     try {
       const artist = new Artist(req.body);
-      const savedArtist = await artist.save();
+      const savedArtist = await monitorMongoQuery('create', 'Artist', () => artist.save().exec());
 
       await config.redis.del("artists:all");
       res.status(201).json(savedArtist);
@@ -20,7 +21,7 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedArtists));
       }
 
-      const artists = await Artist.find();
+      const artists = await monitorMongoQuery('find', 'Artist', () => Artist.find().exec());
 
       await config.redis.set("artists:all", JSON.stringify(artists), {
         EX: 3600
@@ -36,7 +37,7 @@ module.exports = {
   },
   getArtistById: async (req, res) => {
     try {
-      const artist = await Artist.findById(req.params.id);
+      const artist = await monitorMongoQuery('findById', 'Artist', () => Artist.findById(req.params.id).exec());
       const cacheKey = `artists:${req.params.id}`;
 
       const cachedArtists = await config.redis.get(cacheKey);
@@ -62,11 +63,13 @@ module.exports = {
   },
   updateArtist: async (req, res) => {
     try {
-      const updatedArtist = await Artist.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true }
-      );
+      const updatedArtist = await monitorMongoQuery('update', 'Artist', () => {
+        Artist.findByIdAndUpdate(
+          req.params.id,
+          req.body,
+          { new: true }
+        ).exec()
+      });
       if (!updatedArtist) {
         return res.status(404).json({ message: "Artiste non trouvé" });
       }
@@ -83,7 +86,7 @@ module.exports = {
   },
   deleteArtist: async (req, res) => {
     try {
-      const deletedArtist = await Artist.findByIdAndDelete(req.params.id);
+      const deletedArtist = await monitorMongoQuery('delete', 'Artist', () => Artist.findByIdAndDelete(req.params.id).exec());
       if (!deletedArtist) {
         return res.status(404).json({ message: "Artiste non trouvé" });
       }

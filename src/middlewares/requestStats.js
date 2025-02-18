@@ -11,7 +11,6 @@ const requestStatsMiddleware = (req, res, next) => {
       requestStats.error += 1;
     }
   });
-
   next();
 };
 
