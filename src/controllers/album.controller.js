@@ -1,6 +1,6 @@
 const Album = require("../models/Album");
 const config = require("../config");
-const { monitorMongoQuery } =  require("../utils/metrics/metrics")
+const { monitorMongoQuery } = require("../utils/metrics/metrics");
 
 module.exports = {
   createAlbum: async (req, res) => {
@@ -13,7 +13,9 @@ module.exports = {
         trackCount
       });
 
-      const savedAlbum = await monitorMongoQuery('create', 'Album', () => album.save().exec());
+      const savedAlbum = await monitorMongoQuery("create", "Album", () =>
+        album.save()
+      );
 
       await config.redis.del("albums:all");
 
@@ -33,7 +35,9 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbums));
       }
 
-      const albums = await monitorMongoQuery('find', 'Album', () => Album.find().populate("artist").populate("tracks").exec());
+      const albums = await monitorMongoQuery("find", "Album", () =>
+        Album.find().populate("artist").populate("tracks").exec()
+      );
 
       await config.redis.set("albums:all", JSON.stringify(albums), {
         EX: 3600
@@ -59,7 +63,9 @@ module.exports = {
         return res.status(200).json(JSON.parse(cachedAlbum));
       }
 
-      const album = await monitorMongoQuery('findById', 'Album', () => Album.findById(albumId).populate("artist").populate("tracks").exec());
+      const album = await monitorMongoQuery("findById", "Album", () =>
+        Album.findById(albumId).populate("artist").populate("tracks").exec()
+      );
 
       if (!album) {
         return res.status(404).json({ message: "Album non trouvé" });
@@ -84,8 +90,8 @@ module.exports = {
 
       const { tracks } = req.body;
 
-      const updatedAlbum =  await monitorMongoQuery('update', 'Album', () => {
-        Album.findByIdAndUpdate(
+      const updatedAlbum = await monitorMongoQuery("update", "Album", () => {
+        return Album.findByIdAndUpdate(
           albumId,
           {
             ...req.body,
@@ -95,7 +101,7 @@ module.exports = {
         )
           .populate("artist")
           .populate("tracks")
-          .exec()
+          .exec();
       });
 
       if (!updatedAlbum) {
@@ -120,20 +126,21 @@ module.exports = {
   deleteAlbum: async (req, res) => {
     try {
       const albumId = req.params.id;
-      const deletedAlbum = await monitorMongoQuery('delete', 'Album', () => Album.findByIdAndDelete(albumId).exec());
+      const deletedAlbum = await monitorMongoQuery("delete", "Album", () =>
+        Album.findByIdAndDelete(albumId).exec()
+      );
 
       if (!deletedAlbum) {
         return res.status(404).json({ message: "Album non trouvé" });
       }
-      const start = Date.now();
+
       const cacheKey = `albums:${albumId}`;
       await config.redis.del(cacheKey);
       await config.redis.del("albums:all");
-      const duration = Date.now() - start;
 
       res.status(200).json({
         message: "Album supprimé avec succès",
-        album: deletedAlbum,
+        album: deletedAlbum
       });
     } catch (error) {
       res

@@ -11,7 +11,7 @@ const secretKey = crypto.randomBytes(64).toString("hex");
 const configureWebSocket = require("./utils/sockets/websockets");
 const path = require("path");
 const { startScheduledBackups } = require("./utils/backup/backup.cron");
-const { metricsMiddleware } = require('./utils/metrics/metrics');
+const { metricsMiddleware } = require("./utils/metrics/metrics");
 const server = http.createServer(app);
 
 // function testHusky() {
@@ -44,8 +44,6 @@ app.use(
 );
 
 app.use(middlewares.helmet);
-
-
 
 // app.use(middlewares.redisLatency(config.redis));
 

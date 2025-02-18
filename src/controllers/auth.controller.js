@@ -16,7 +16,9 @@ module.exports = {
           .json({ message: "Seul l'administrateur peut se connecter." });
       }
 
-      let adminUser = await monitorMongoQuery('find', 'User', () => User.findOne({ email }).exec());
+      let adminUser = await monitorMongoQuery("find", "User", () =>
+        User.findOne({ email }).exec()
+      );
 
       if (!adminUser) {
         const hashedPassword = await bcrypt.hash(config.env.admin_password, 10);
@@ -44,13 +46,9 @@ module.exports = {
         role: adminUser.role
       };
 
-      const token = jwt.sign(
-        req.session.user,
-        config.env.jwt_secret,
-        { expiresIn: "1h" }
-      );
-
-      
+      const token = jwt.sign(req.session.user, config.env.jwt_secret, {
+        expiresIn: "1h"
+      });
 
       res.status(200).json({ message: "Connexion réussie.", token });
     } catch (error) {

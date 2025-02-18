@@ -1,95 +1,70 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-useless-catch */
 // metrics.js
-const promClient = require('prom-client');
-const os = require('os');
-const diskusage = require('diskusage');
-const { redisClient } = require('../../config/redis');
+const promClient = require("prom-client");
 const si = require("systeminformation");
 const config = require("../../config");
-
 
 // -------------------------------
 // 1. Collecte des métriques par défaut
 // -------------------------------
 // promClient.collectDefaultMetrics({ prefix: 'node_app_' });
 
-
 // a) Mesurer le temps des requêtes HTTP
 const httpRequestDurationMilliseconds = new promClient.Histogram({
-  name: 'request_duration',
-  help: 'Durée des requêtes HTTP en ms',
-  labelNames: ['method', 'route', 'status_code'],
+  name: "request_duration",
+  help: "Durée des requêtes HTTP en ms",
+  labelNames: ["method", "route", "status_code"],
   buckets: [1, 5, 10, 50, 100, 500, 1000, 3000, 5000]
 });
 
-// const lastHttpRequestDurationMs = new promClient.Gauge({
-//     name: 'http_last_request_duration_ms',
-//     help: 'Durée de chaque requête HTTP en millisecondes',
-//     labelNames: ['method', 'route', 'status_code']
-//   });
-  
-//   const totalHttpRequestDurationMs = new promClient.Counter({
-//     name: 'http_total_request_duration_ms',
-//     help: 'Somme totale des durées des requêtes HTTP en millisecondes'
-//   });
-
 // b) Compteurs pour le succès et l'erreur des requêtes HTTP
 const httpRequestSuccessCounter = new promClient.Counter({
-  name: 'request_success_total',
-  help: 'Nombre total de requêtes HTTP réussies',
-  labelNames: ['method', 'route', 'status_code']
+  name: "request_success_total",
+  help: "Nombre total de requêtes HTTP réussies",
+  labelNames: ["method", "route", "status_code"]
 });
 
 const httpRequestErrorCounter = new promClient.Counter({
-  name: 'request_error_total',
-  help: 'Nombre total de requêtes HTTP en erreur',
-  labelNames: ['method', 'route', 'status_code']
+  name: "request_error_total",
+  help: "Nombre total de requêtes HTTP en erreur",
+  labelNames: ["method", "route", "status_code"]
 });
 
 // c) Durée d'exécution des requêtes MongoDB
-// Histogramme pour mesurer la durée des requêtes MongoDB
 const mongoQueryDurationMs = new promClient.Histogram({
-    name: 'mongo_query_duration_ms',
-    help: 'Durée d\'exécution des requêtes MongoDB en millisecondes',
-    labelNames: ['operation', 'collection'],
-    buckets: [1, 5, 10, 50, 100, 500, 1000, 5000] // En millisecondes
-  });
-  
-  // Compteur pour suivre le nombre total de requêtes MongoDB
-  const mongoQueryCount = new promClient.Counter({
-    name: 'mongo_query_count',
-    help: 'Nombre total de requêtes MongoDB exécutées',
-    labelNames: ['operation', 'collection']
-  });
+  name: "mongo_query_duration_ms",
+  help: "Durée d'exécution des requêtes MongoDB en millisecondes",
+  labelNames: ["operation", "collection"],
+  buckets: [1, 5, 10, 50, 100, 500, 1000, 5000]
+});
 
-// d) Durée des commandes Redis
-// const redisCommandDurationSeconds = new promClient.Histogram({
-//   name: 'redis_command_duration_seconds',
-//   help: 'Durée d\'exécution des commandes Redis en secondes',
-//   labelNames: ['command'],
-//   buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
-// });
+// Compteur pour suivre le nombre total de requêtes MongoDB
+const mongoQueryCount = new promClient.Counter({
+  name: "mongo_query_count",
+  help: "Nombre total de requêtes MongoDB exécutées",
+  labelNames: ["operation", "collection"]
+});
 
 // f) Compteur pour mesurer la bande passante (en octets transférés)
 const bandwidthBytesCounter = new promClient.Counter({
-  name: 'http_bandwidth_bytes_total',
-  help: 'Nombre total d\'octets transférés',
-  labelNames: ['direction'] // 'in' pour les données entrantes, 'out' pour les données sortantes
+  name: "http_bandwidth_bytes_total",
+  help: "Nombre total d'octets transférés",
+  labelNames: ["direction"]
 });
-
 
 // -------------------------------
 // 5. Middlewares et Helpers de Monitoring
 // -------------------------------
 function metricsMiddleware(req, res, next) {
-    console.log(req.path);
-    if (req.path === "/api/metrics/") {
-        return next(); // Ignore ce middleware pour cette route
-      }
+  if (req.path === "/api/metrics/") {
+    return next();
+  }
   const start = process.hrtime();
 
   // Comptabilisation de la bande passante entrante
-  const reqContentLength = parseInt(req.headers['content-length'] || '0', 10);
-  bandwidthBytesCounter.labels('in').inc(reqContentLength);
+  const reqContentLength = parseInt(req.headers["content-length"] || "0", 10);
+  bandwidthBytesCounter.labels("in").inc(reqContentLength);
 
   // Intercepter l'écriture de la réponse pour mesurer la bande passante sortante
   const originalWrite = res.write;
@@ -111,20 +86,18 @@ function metricsMiddleware(req, res, next) {
         ? chunk.length
         : Buffer.byteLength(chunk, encoding);
     }
-    bandwidthBytesCounter.labels('out').inc(responseLength);
+    bandwidthBytesCounter.labels("out").inc(responseLength);
     originalEnd.apply(res, arguments);
   };
 
-  // Une fois la réponse envoyée, enregistre le temps de réponse et les compteurs
-  res.on('finish', () => {
-    const route = (req.route && req.route.path) ? req.route.path : req.path;
+  res.on("finish", () => {
+    const route = req.route && req.route.path ? req.route.path : req.path;
     const diff = process.hrtime(start);
-    const responseTimeInMs = (diff[0] * 1e9 + diff[1]) / 1e6; // Convert to milliseconds
-    httpRequestDurationMilliseconds.labels(req.method, route, res.statusCode).observe(responseTimeInMs);
-    // Enregistrer la durée de cette requête
-    // lastHttpRequestDurationMs.labels(req.method, req.path, res.statusCode).set(responseTimeInMs);
-    // Ajouter cette durée à la somme totale
-    // totalHttpRequestDurationMs.inc(responseTimeInMs);
+    const responseTimeInMs = (diff[0] * 1e9 + diff[1]) / 1e6;
+    httpRequestDurationMilliseconds
+      .labels(req.method, route, res.statusCode)
+      .observe(responseTimeInMs);
+
     if (res.statusCode >= 200 && res.statusCode < 400) {
       httpRequestSuccessCounter.labels(req.method, route, res.statusCode).inc();
     } else {
@@ -137,50 +110,23 @@ function metricsMiddleware(req, res, next) {
 
 /**
  * Helper pour enrober une requête MongoDB et mesurer sa durée d'exécution.
- *
- * @param {string} operation - Le nom de l'opération (ex: 'find', 'update', etc.)
- * @param {string} collection - Le nom de la collection concernée
- * @param {Function} queryFunc - La fonction qui exécute la requête (doit retourner une Promise)
  */
 async function monitorMongoQuery(operation, collection, queryFunc) {
-    const start = process.hrtime();
+  const start = process.hrtime();
 
-    try {
-      const result = await queryFunc();
-      const diff = process.hrtime(start);
-      const durationMs = (diff[0] * 1e9 + diff[1]) / 1e6; // Convertir en millisecondes
-  
-      // Enregistrer la durée dans l'histogramme
-      mongoQueryDurationMs.labels(operation, collection).observe(durationMs);
-  
-      // Incrémenter le compteur
-      mongoQueryCount.labels(operation, collection).inc();
-  
-      return result;
-    } catch (error) {
-      throw error;
-    }
+  try {
+    const result = await queryFunc();
+    const diff = process.hrtime(start);
+    const durationMs = (diff[0] * 1e9 + diff[1]) / 1e6;
+
+    mongoQueryDurationMs.labels(operation, collection).observe(durationMs);
+    mongoQueryCount.labels(operation, collection).inc();
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
 }
-
-/**
- * Helper pour enrober une commande Redis et mesurer sa durée.
- *
- * @param {string} command - Le nom de la commande Redis
- * @param  {...any} args - Les arguments de la commande Redis
- */
-// function monitorRedisCommand(command, ...args) {
-//   const start = Date.now();
-//   return new Promise((resolve, reject) => {
-//     redisClient[command](...args, (err, result) => {
-//       const duration = (Date.now() - start) / 1000;
-//       redisCommandDurationSeconds.labels(command).observe(duration);
-//       if (err) {
-//         return reject(err);
-//       }
-//       resolve(result);
-//     });
-//   });
-// }
 
 /**
  * Retourne l'ensemble des métriques collectées sous forme de JSON.
@@ -189,42 +135,39 @@ async function getMetrics() {
   return await promClient.register.getMetricsAsJSON();
 }
 
-
 async function getSystemMetrics(req, res, next) {
-    try {
-        const cpu = await si.currentLoad();
-        const memory = await si.mem();
-        const disk = await si.fsSize();
-        const metrics = {
-          cpu: {
-            usage_percent: `${cpu.currentLoad.toFixed(2)}`,
-          },
-          memory: {
-            total_GB: `${(memory.total / 1e9).toFixed(2)}`,
-            used_GB: `${(memory.active / 1e9).toFixed(2)}`,
-            free_GB: `${(memory.available / 1e9).toFixed(2)}`
-          },
-          disk: disk.map((d) => ({
-            filesystem: d.fs,
-            total_GB: `${(d.size / 1e9).toFixed(2)}`,
-            used_GB: `${(d.used / 1e9).toFixed(2)}`,
-            usage_percent: `${((d.used / d.size) * 100).toFixed(2)}`
-          }))
-        };
-  
-        res.status(200).json(metrics);
-    } catch (err) {
-        config.logger.error(
-          "Erreur lors de la collecte des métriques serveur :",
-          err
-        );
-        res
-          .status(500)
-          .json({ error: "Impossible de récupérer les métriques serveur" });
-    }
-}
-  
+  try {
+    const cpu = await si.currentLoad();
+    const memory = await si.mem();
+    const disk = await si.fsSize();
+    const metrics = {
+      cpu: {
+        usage_percent: `${cpu.currentLoad.toFixed(2)}`
+      },
+      memory: {
+        total_GB: `${(memory.total / 1e9).toFixed(2)}`,
+        used_GB: `${(memory.active / 1e9).toFixed(2)}`,
+        free_GB: `${(memory.available / 1e9).toFixed(2)}`
+      },
+      disk: disk.map((d) => ({
+        filesystem: d.fs,
+        total_GB: `${(d.size / 1e9).toFixed(2)}`,
+        used_GB: `${(d.used / 1e9).toFixed(2)}`,
+        usage_percent: `${((d.used / d.size) * 100).toFixed(2)}`
+      }))
+    };
 
+    res.status(200).json(metrics);
+  } catch (err) {
+    config.logger.error(
+      "Erreur lors de la collecte des métriques serveur :",
+      err
+    );
+    res
+      .status(500)
+      .json({ error: "Impossible de récupérer les métriques serveur" });
+  }
+}
 
 // -------------------------------
 // 6. Export des fonctionnalités de monitoring
@@ -232,9 +175,7 @@ async function getSystemMetrics(req, res, next) {
 module.exports = {
   metricsMiddleware,
   monitorMongoQuery,
-  monitorRedisCommand,
   getMetrics,
   getSystemMetrics,
-  // Pour pouvoir éventuellement étendre ou consulter d'autres métriques :
   promClient
 };
