@@ -2,7 +2,6 @@ const { body, param, validationResult } = require("express-validator");
 
 const userValidationRules = () => {
   return [
-    // Username
     body("username")
       .trim()
       .notEmpty()
@@ -10,7 +9,6 @@ const userValidationRules = () => {
       .isLength({ max: 50 })
       .withMessage("Le nom d'utilisateur ne doit pas dépasser 50 caractères"),
 
-    // Email
     body("email")
       .trim()
       .notEmpty()
@@ -21,7 +19,6 @@ const userValidationRules = () => {
       .withMessage("L'email ne doit pas dépasser 255 caractères")
       .normalizeEmail(),
 
-    // Password
     body("password")
       .optional()
       .isLength({ min: 6, max: 255 })
@@ -31,15 +28,14 @@ const userValidationRules = () => {
         "Le mot de passe doit contenir au moins une lettre et un chiffre"
       ),
 
-    // Role
     body("role")
       .trim()
       .notEmpty()
       .withMessage("Le rôle est requis")
       .isLength({ max: 50 })
       .withMessage("Le rôle ne doit pas dépasser 50 caractères")
-      .isIn(["admin", "user", "artist"])
-      .withMessage("Le rôle doit être admin, user ou artist")
+      .isIn(["admin"])
+      .withMessage("Le rôle doit être admin")
   ];
 };
 

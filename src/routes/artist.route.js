@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const artistController = require("../controllers/artist.controller");
 const middlewares = require("../middlewares/");
-
+const {
+  artist: { artistValidationRules, validateArtistId, validate }
+} = require("../validations");
 /**
  * @swagger
  * tags:
@@ -177,9 +179,33 @@ const middlewares = require("../middlewares/");
  */
 
 router.get("/", artistController.getAllArtists);
-router.get("/:id", artistController.getArtistById);
-router.post("/", middlewares.isAuth, artistController.createArtist);
-router.put("/:id", middlewares.isAuth, artistController.updateArtist);
-router.delete("/:id", middlewares.isAuth, artistController.deleteArtist);
+router.get(
+  "/:id",
+  validateArtistId(),
+  validate,
+  artistController.getArtistById
+);
+router.post(
+  "/",
+  artistValidationRules(),
+  validate,
+  middlewares.isAuth,
+  artistController.createArtist
+);
+router.put(
+  "/:id",
+  validateArtistId(),
+  artistValidationRules(),
+  validate,
+  middlewares.isAuth,
+  artistController.updateArtist
+);
+router.delete(
+  "/:id",
+  validateArtistId(),
+  validate,
+  middlewares.isAuth,
+  artistController.deleteArtist
+);
 
 module.exports = router;

@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const audioController = require("../controllers/audio.controller");
 const middlewares = require("../middlewares/");
-// const multer = require("../middlewares/multer");
 const multer = require("multer");
-
+const {
+  audio: { audioValidationRules, validateAudioId, validate }
+} = require("../validations");
 router.use(express.json({ limit: "50mb" })); // Ajustez la limite si nécessaire
 router.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -158,15 +159,30 @@ router.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const upload = multer({ storage: multer.memoryStorage() });
 router.get("/", audioController.getAllAudios);
-router.get("/:id", audioController.getAudioById);
+router.get("/:id", validateAudioId(), validate, audioController.getAudioById);
 router.post(
   "/",
   upload.single("file"),
+  audioValidationRules(),
+  validate,
   middlewares.isAuth,
   audioController.createAudio
 );
-router.put("/:id", middlewares.isAuth, audioController.updateAudio);
-router.delete("/:id", middlewares.isAuth, audioController.deleteAudio);
+router.put(
+  "/:id",
+  validateAudioId(),
+  audioValidationRules(),
+  validate,
+  middlewares.isAuth,
+  audioController.updateAudio
+);
+router.delete(
+  "/:id",
+  validateAudioId(),
+  validate,
+  middlewares.isAuth,
+  audioController.deleteAudio
+);
 
 // Configurer Multer pour stocker le fichier en mémoire
 router.post("/convert", upload.single("file"), audioController.convertAudio);

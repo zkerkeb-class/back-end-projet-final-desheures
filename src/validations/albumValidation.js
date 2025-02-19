@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 
 const albumValidationRules = () => {
   return [
-    // Titre
     body("title")
       .trim()
       .notEmpty()
@@ -11,7 +10,6 @@ const albumValidationRules = () => {
       .isLength({ max: 200 })
       .withMessage("Le titre ne doit pas dépasser 200 caractères"),
 
-    // Artiste
     body("artist")
       .notEmpty()
       .withMessage("L'artiste est requis")
@@ -22,13 +20,11 @@ const albumValidationRules = () => {
         return true;
       }),
 
-    // Date de sortie
     body("releaseDate")
       .optional()
       .isISO8601()
       .withMessage("La date de sortie doit être une date valide"),
 
-    // Genres
     body("genres")
       .optional()
       .isArray()
@@ -42,21 +38,13 @@ const albumValidationRules = () => {
         return true;
       }),
 
-    // URL de la couverture
     body("coverUrl")
       .optional()
-      .custom((value) => {
-        if (value && !value.startsWith("/uploads/")) {
-          throw new Error("Le chemin de l'image doit commencer par /uploads/");
-        }
-        return true;
-      })
       .matches(/\.(jpg|jpeg|png|gif|webp)$/i)
       .withMessage(
         "Le fichier doit être une image (jpg, jpeg, png, gif, webp)"
       ),
 
-    // Pistes
     body("tracks")
       .optional()
       .isArray()
@@ -71,7 +59,6 @@ const albumValidationRules = () => {
         return true;
       }),
 
-    // Popularité
     body("popularity")
       .optional()
       .isInt({ min: 0, max: 100 })

@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 
 const artistValidationRules = () => {
   return [
-    // Nom
     body("name")
       .trim()
       .notEmpty()
@@ -11,14 +10,12 @@ const artistValidationRules = () => {
       .isLength({ max: 200 })
       .withMessage("Le nom ne doit pas dépasser 200 caractères"),
 
-    // Prononciation du nom
     body("namePhonetic")
       .optional()
       .trim()
       .isLength({ max: 200 })
       .withMessage("La prononciation ne doit pas dépasser 200 caractères"),
 
-    // Genres
     body("genres")
       .optional()
       .isArray()
@@ -32,28 +29,19 @@ const artistValidationRules = () => {
         return true;
       }),
 
-    // Biographie
     body("bio")
       .optional()
       .trim()
       .isLength({ max: 2000 })
       .withMessage("La biographie ne doit pas dépasser 2000 caractères"),
 
-    // URL de l'image
     body("imageUrl")
       .optional()
-      .custom((value) => {
-        if (value && !value.startsWith("/uploads/")) {
-          throw new Error("Le chemin de l'image doit commencer par /uploads/");
-        }
-        return true;
-      })
       .matches(/\.(jpg|jpeg|png|gif|webp)$/i)
       .withMessage(
         "Le fichier doit être une image (jpg, jpeg, png, gif, webp)"
       ),
 
-    // Liens sociaux
     body("socialLinks")
       .optional()
       .isArray()
@@ -74,13 +62,11 @@ const artistValidationRules = () => {
       .isURL()
       .withMessage("L'URL du réseau social doit être valide"),
 
-    // Popularité
     body("popularity")
       .optional()
       .isInt({ min: 0, max: 100 })
       .withMessage("La popularité doit être comprise entre 0 et 100"),
 
-    // Albums
     body("albums")
       .optional()
       .isArray()

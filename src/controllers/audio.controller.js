@@ -312,7 +312,7 @@ module.exports = {
         album.trackCount = album.tracks.length;
         await album.save();
       }
-      await config.redis.del("audios:all");
+      await config.redis.flushAll();
 
       res.status(201).json({
         message: "Audio créé avec succès",
