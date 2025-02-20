@@ -15,7 +15,6 @@ const mongoose = require("mongoose");
 const config = require("../../config");
 const crypto = require("crypto");
 
-// Définition des chemins
 const audioDirectory = path.join(__dirname, "../../../uploads/audios/mp3");
 const wavDirectory = path.join(__dirname, "../../../uploads/audios/wav");
 const imageDirectory = path.join(__dirname, "../../../uploads/images");
@@ -48,7 +47,6 @@ const GENRES = [
   "Folk"
 ];
 
-// Création des dossiers nécessaires
 [jpgDirectory, webpDirectory, wavDirectory].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     config.logger.info(`Création du dossier: ${dir}`);
@@ -58,9 +56,7 @@ const GENRES = [
 
 mongoose
   .connect(config.env.mongo_uri, {
-    dbName: "admin",
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+    dbName: "desheures"
   })
   .then(() => config.logger.info("Connexion à MongoDB réussie !"))
   .catch((err) => {
