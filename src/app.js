@@ -71,10 +71,9 @@ app.get("/", (req, res) => {
     req.session.views += 1;
   }
 
-  res.send(
-    `Vous avez visité cette page ${JSON.stringify(req.session.views)} fois.`
+  return res.send(
+    `Vous avez visité cette page ${req.session.views} fois. Welcome to DesHeures API Application`
   );
-  res.send({ message: "Welcome to DesHeures API Application" });
 });
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(config.swaggerSpec));
