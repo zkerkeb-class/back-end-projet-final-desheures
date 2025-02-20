@@ -10,10 +10,7 @@ const requiredEnvVariables = [
   "MONGO_CLUSTER",
   "JWT_SECRET",
   "ADMIN_PASSWORD",
-  "MONGO_URI",
-  "REDIS_HOST",
-  "REDIS_PORT",
-  "REDIS_PASSWORD"
+  "MONGO_URI"
 ];
 
 const missingEnvVariables = requiredEnvVariables.filter(
@@ -40,6 +37,7 @@ const env = {
   redis_host: process.env.REDIS_HOST,
   redis_port: process.env.REDIS_PORT,
   redis_password: process.env.REDIS_PASSWORD,
+  redis_url: process.env.REDIS_URL,
   session_secret: process.env.SESSION_SECRET
 };
 

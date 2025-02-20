@@ -19,8 +19,6 @@ const seedDatabase = async () => {
     config.logger.info("✅ Seeding terminé !");
     process.exit(0);
   } catch (error) {
-    console.log(error);
-
     config.logger.error("❌ Erreur lors du seeding:", error);
     process.exit(1);
   }
