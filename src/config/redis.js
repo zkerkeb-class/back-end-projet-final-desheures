@@ -1,21 +1,21 @@
 const redis = require("redis");
 const logger = require("./logger");
 
-// const redisOptions = {
-//   socket: {
-//     host: process.env.REDIS_HOST,
-//     port: process.env.REDIS_PORT
-//   }
-// };
+const redisOptions = {
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT
+  }
+};
 
-// if (process.env.REDIS_PASSWORD) {
-//   redisOptions.password = process.env.REDIS_PASSWORD;
-// }
+if (process.env.REDIS_PASSWORD) {
+  redisOptions.password = process.env.REDIS_PASSWORD;
+}
 
-// const redisClient = redis.createClient(redisOptions);
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL
-});
+const redisClient = redis.createClient(redisOptions);
+// const redisClient = redis.createClient({
+//   url: process.env.REDIS_URL
+// });
 
 redisClient.on("error", (err) => {
   logger.error("❌ Redis error:", err);
