@@ -70,7 +70,6 @@ const configureWebSocket = (server) => {
       }
     });
 
-    // Gestion des rooms
     socket.on("createRoom", ({ name }) => {
       const roomId = Math.random().toString(36).substring(2, 8);
       userName = name;
