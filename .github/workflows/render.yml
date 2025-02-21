@@ -11,11 +11,6 @@ jobs:
     name: Deploy to Render
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Deploy to Render
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: |
-          curl "$RENDER_DEPLOY_HOOK_URL"
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
