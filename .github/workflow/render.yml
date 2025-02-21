@@ -5,7 +5,7 @@ on:
     branches: [prod]
   pull_request:
     branches: [prod]
-    
+
 jobs:
   deploy:
     name: Deploy to Render
