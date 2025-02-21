@@ -1,9 +1,11 @@
 name: Deploy to Render
+
 on:
   push:
-    branches:
-      - prod 
-
+    branches: [prod]
+  pull_request:
+    branches: [prod]
+    
 jobs:
   deploy:
     name: Deploy to Render
