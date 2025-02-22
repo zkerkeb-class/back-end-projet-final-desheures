@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const albumValidationRules = () => {
   return [
     body("title")
+      .optional()
       .trim()
       .notEmpty()
       .withMessage("Le titre est requis")

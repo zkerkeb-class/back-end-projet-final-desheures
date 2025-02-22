@@ -4,63 +4,39 @@ const mongoose = require("mongoose");
 const audioValidationRules = () => {
   return [
     body("title")
+      .optional({ values: "falsy" })
       .trim()
-      .notEmpty()
-      .withMessage("Le titre est requis")
       .isLength({ max: 200 })
       .withMessage("Le titre ne doit pas dépasser 200 caractères"),
 
-    body("artist")
-      .notEmpty()
-      .withMessage("L'artiste est requis")
-      .custom((value) => {
-        if (!mongoose.Types.ObjectId.isValid(value)) {
-          throw new Error("ID artiste invalide");
-        }
-        return true;
-      }),
+    body("artist").optional({ values: "falsy" }).trim(),
 
-    body("album")
-      .optional()
-      .custom((value) => {
-        if (value && !mongoose.Types.ObjectId.isValid(value)) {
-          throw new Error("ID album invalide");
-        }
-        return true;
-      }),
+    body("album").optional({ values: "falsy" }).trim(),
 
     body("duration")
-      .notEmpty()
-      .withMessage("La durée est requise")
+      .optional({ values: "falsy" })
       .isInt({ min: 0 })
       .withMessage("La durée doit être un nombre positif"),
 
-    body("audioUrl")
-      .notEmpty()
-      .matches(/\.(mp3|wav)$/i)
-      .withMessage("L'URL de l'audio est requise")
-      .isURL()
-      .withMessage("L'URL de l'audio doit être valide"),
-
     body("lyrics")
-      .optional()
+      .optional({ values: "falsy" })
       .trim()
       .isLength({ max: 5000 })
       .withMessage("Les paroles ne doivent pas dépasser 5000 caractères"),
 
     body("tempo")
-      .optional()
+      .optional({ values: "falsy" })
       .isFloat({ min: 0, max: 300 })
       .withMessage("Le tempo doit être compris entre 0 et 300"),
 
     body("mood")
-      .optional()
+      .optional({ values: "falsy" })
       .trim()
       .isLength({ max: 50 })
       .withMessage("L'humeur ne doit pas dépasser 50 caractères"),
 
     body("genres")
-      .optional()
+      .optional({ values: "falsy" })
       .isArray()
       .withMessage("Les genres doivent être un tableau")
       .custom((value) => {
@@ -73,12 +49,12 @@ const audioValidationRules = () => {
       }),
 
     body("popularity")
-      .optional()
+      .optional({ values: "falsy" })
       .isInt({ min: 0, max: 100 })
       .withMessage("La popularité doit être comprise entre 0 et 100"),
 
     body("releaseDate")
-      .optional()
+      .optional({ values: "falsy" })
       .isISO8601()
       .withMessage("La date de sortie doit être une date valide")
   ];

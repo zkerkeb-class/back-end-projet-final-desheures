@@ -387,8 +387,72 @@ module.exports = {
   },
   updateAudio: async (req, res) => {
     try {
+      const { file, body } = req;
+
+      if (file) {
+        if (!file.buffer) {
+          return res.status(400).json({
+            message: "Un fichier audio est requis"
+          });
+        }
+
+        if (!file.originalname.toLowerCase().endsWith(".mp3")) {
+          return res.status(400).json({
+            message: "Seuls les fichiers MP3 sont acceptés"
+          });
+        }
+
+        const existingAudio = await Audio.findOne({
+          _id: { $ne: req.params.id },
+          "audioUrls.mp3": `uploads/audios/mp3/${file.originalname}`
+        });
+
+        if (existingAudio) {
+          return res.status(409).json({
+            message: "Un audio avec ce nom existe déjà",
+            existingAudio
+          });
+        }
+
+        const audioPaths = await processAudioFile(
+          file.buffer,
+          file.originalname
+        );
+        const tags = NodeID3.read(audioPaths.absoluteMp3Path);
+        const duration = getMP3Duration(file.buffer) / 1000;
+
+        const artistName = tags.artist || body.artist;
+        if (artistName) {
+          const artist = await createOrUpdateArtist(artistName, tags);
+          body.artist = artist._id;
+        }
+
+        const trackName =
+          tags.title ||
+          body.title ||
+          file.originalname.replace(/\.(mp3|wav)$/i, "");
+        if (trackName) {
+          const album = await createOrUpdateAlbum(trackName, body.artist, tags);
+          if (album) {
+            body.album = album._id;
+          }
+        }
+
+        Object.assign(body, {
+          duration,
+          audioUrls: {
+            mp3: audioPaths.mp3Path,
+            wav: audioPaths.wavPath
+          },
+          genres: tags.genre ? [tags.genre] : body.genres || [],
+          releaseDate: tags.year
+            ? new Date(Number(tags.year), 0)
+            : body.releaseDate
+        });
+      }
+
       const updatedAudio = await monitorMongoQuery("update", "Audio", () => {
-        return Audio.findByIdAndUpdate(req.params.id, req.body, {
+        return Audio.findByIdAndUpdate(req.params.id, body, {
           new: true
         })
           .populate("artist", "name imageUrl imageUrls")
@@ -404,8 +468,19 @@ module.exports = {
       await config.redis.set(cacheKey, JSON.stringify(updatedAudio), {
         EX: 3600
       });
-
       await config.redis.del("audios:all");
+
+      if (body.album && updatedAudio.album !== body.album) {
+        if (updatedAudio.album) {
+          await Album.findByIdAndUpdate(updatedAudio.album, {
+            $pull: { tracks: updatedAudio._id }
+          });
+        }
+
+        await Album.findByIdAndUpdate(body.album, {
+          $addToSet: { tracks: updatedAudio._id }
+        });
+      }
 
       res.status(200).json(updatedAudio);
     } catch (error) {
@@ -426,7 +501,6 @@ module.exports = {
         return res.status(404).json({ message: "Audio non trouvé" });
       }
 
-      // Si l'audio fait partie d'un album, mettre à jour l'album
       if (deletedAudio.album) {
         const album = await Album.findById(deletedAudio.album);
         if (album) {
@@ -438,7 +512,6 @@ module.exports = {
         }
       }
 
-      // Supprimer les fichiers physiques
       try {
         const mp3Path = path.join(
           directories.mp3,
@@ -458,7 +531,6 @@ module.exports = {
         );
       }
 
-      // Nettoyer le cache
       const cacheKey = `audios:${req.params.id}`;
       await config.redis.del(cacheKey);
       await config.redis.del("audios:all");
