@@ -1,0 +1,18 @@
+const redis =  require("redis");
+const redisClient = redis.createClient();
+
+
+const checkRequestCache = async (req, res, next) => {
+  const cacheKey = req.params.id;
+  await redisClient.get(`requestCache:${cacheKey}`, (err, data) => {
+    if (data) {
+      return res.status(200).json(JSON.parse(data)); // Si les données sont en cache, les renvoyer
+    } else {
+      next(); // Sinon, passer à la fonction suivante
+    }
+  });
+}
+
+module.exports = checkRequestCache;
+
+
