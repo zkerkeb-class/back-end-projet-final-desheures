@@ -1,12 +1,10 @@
-require('dotenv').config();
+const redisConfig = require("./redis");
 
-const config = {
-  port: process.env.PORT,
-  frontend_url: process.env.FRONTEND_URL,
-  backoffice_url: process.env.BACKOFFICE_URL,
-  mongo_user: process.env.MONGO_USER,
-  mongo_pwd: process.env.MONGO_PWD,
-  mongo_cluster: process.env.MONGO_CLUSTER
+module.exports = {
+  connectToDatabase: require("./db"),
+  env: require("./env"),
+  swaggerSpec: require("./swagger"),
+  logger: require("./logger"),
+  redis: redisConfig.redisClient,
+  checkRedisReady: redisConfig.isRedisReady
 };
-
-module.exports = config;
