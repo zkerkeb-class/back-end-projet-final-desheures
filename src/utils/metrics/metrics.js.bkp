@@ -1,0 +1,60 @@
+const config = require("../config");
+
+let metrics = {
+  cacheHits: 0,
+  cacheMisses: 0,
+  redisLatencies: [],
+};
+
+// Fonction pour enregistrer la latence Redis
+const logRedisLatency = (operation, latency) => {
+  metrics.redisLatencies.push({ operation, latency, timestamp: Date.now() });
+
+  // Supprimer les anciennes métriques si elles dépassent 100 entrées
+  if (metrics.redisLatencies.length > 100) {
+    metrics.redisLatencies = metrics.redisLatencies.slice(-100);
+  }
+};
+
+// Fonction pour récupérer les métriques
+const getMetrics = (req, res) => {
+  try {
+    const memoryUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+
+    res.json({
+      cacheHits: metrics.cacheHits,
+      cacheMisses: metrics.cacheMisses,
+      redisLatencies: metrics.redisLatencies,
+      serverUsage: {
+        memory: {
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+        },
+        cpu: {
+          user: cpuUsage.user,
+          system: cpuUsage.system,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération des métriques", error });
+  }
+};
+
+// Fonctions pour incrémenter les hits/misses
+const incrementCacheHit = () => {
+  metrics.cacheHits++;
+};
+
+const incrementCacheMiss = () => {
+  metrics.cacheMisses++;
+};
+
+module.exports = {
+  logRedisLatency,
+  getMetrics,
+  incrementCacheHit,
+  incrementCacheMiss,
+};
